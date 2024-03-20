@@ -42,7 +42,7 @@ Continuous monitoring of the anomaly detection system's performance and accuracy
 ### How-To Guide
 WIP
 
-##Running it locally
+## Running it locally
 
 - Create a `config.yaml` file under the `config` directory
 Fill it like so:
