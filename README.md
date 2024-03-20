@@ -39,8 +39,28 @@ The roadmap towards full automation included exploring tools and scripts capable
 
 Continuous monitoring of the anomaly detection system's performance and accuracy was instituted, including tracking false positives and negatives and response times. Regular updates and patches for all system components (Prometheus, Grafana, Prophet, and ChatGPT integration) were applied to ensure optimal performance and security.
 
-### How To Guide
+### How-To Guide
 WIP
+
+##Running it locally
+
+- Create a `config.yaml` file under the `config` directory
+Fill it like so:
+```
+    PROMETHEUS_URL: '[Prometheus-End-Point]'
+    OPENAI_API_KEY: '[CHAT-GPT-API-KEY]'
+    GRAFANA_DASHBOARD_URL: '[Grafana-Dash]'
+    DAYS_TO_INSPECT: [By-Default-7]
+    DEVIATION_THRESHOLD: [By-Default-0.2]
+    CSV_OUTPUT: [By-Default-False]
+```
+
+- Navigate to the `/scripts/` directory
+
+- Run:
+```
+    python3 anomaly_detection.py
+```
 
 ## Conclusion
 

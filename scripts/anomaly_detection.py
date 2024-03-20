@@ -10,6 +10,7 @@ import shutil
 
 current_date = datetime.now()
 date_str = current_date.strftime('%Y-%m-%d')
+directory_name = f"script_csv_outputs/{date_str}"
 
 with open("../config/config.yaml", "r") as yamlfile:
     cfg = yaml.safe_load(yamlfile)
@@ -106,7 +107,7 @@ def main():
     if CSV_OUTPUT:
         if os.path.isdir(date_str):
             shutil.rmtree(date_str)
-        os.makedirs(date_str, exist_ok=True)
+        os.makedirs(directory_name, exist_ok=True)
         
     for metric_name, query in metrics_queries.items():
         print(f"Analyzing {metric_name}...")
@@ -132,8 +133,11 @@ def main():
                     # Sanitize metric name to ensure it's safe for use as a file name
                     safe_metric_name = metric_name.replace("/", "_").replace(" ", "_")
 
-                    # filename = f"{date_str}/anomalies_{safe_metric_name}_partner_{partner}.csv"
-                    filename = f"/data/{date_str}/anomalies_{safe_metric_name}_partner_{partner}.csv"
+                    # Uncomment to following line when testing locally
+                    filename = f"script_csv_outputs/{date_str}/anomalies_{safe_metric_name}_partner_{partner}.csv"
+
+                    # Uncomment the next line when Dockerizing
+                    # filename = f"/data/{date_str}/anomalies_{safe_metric_name}_partner_{partner}.csv"
 
                     if not anomalies.empty:
                         if CSV_OUTPUT:
