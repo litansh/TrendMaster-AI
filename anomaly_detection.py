@@ -4,14 +4,23 @@ import pandas as pd
 from prophet import Prophet
 from datetime import datetime, timedelta
 import yaml
+from datetime import datetime
+import os
+import shutil
 
-# Read configuration from config.yaml
+current_date = datetime.now()
+
+date_str = current_date.strftime('%Y-%m-%d')
+
 with open("config.yaml", "r") as yamlfile:
     cfg = yaml.safe_load(yamlfile)
 
 PROMETHEUS_URL = cfg['PROMETHEUS_URL']
 OPENAI_API_KEY = cfg['OPENAI_API_KEY']
 GRAFANA_DASHBOARD_URL = cfg['GRAFANA_DASHBOARD_URL']
+DAYS_TO_INSPECT = cfg.get('DAYS_TO_INSPECT', 7)  # Default to 7 if not specified
+DEVIATION_THRESHOLD = cfg.get('DEVIATION_THRESHOLD', 0.2)  # Default to 0.2 if not specified
+CSV_OUTPUT = cfg.get('CSV_OUTPUT', False)
 
 openai.api_key = OPENAI_API_KEY
 
@@ -94,15 +103,14 @@ def main():
     metrics_queries = {
         'Nginx Requests Per Minute - 2xx/3xx': 'sum by (partner) (increase(service_nginx_request_time_s_count{path!="", partner!=""}[1m]))'
     }
-    days_to_inspect = 7
-    deviation_threshold = 0.2
-    
+    if os.path.isdir(date_str) and CSV_OUTPUT:
+        shutil.rmtree(date_str)
     for metric_name, query in metrics_queries.items():
         print(f"Analyzing {metric_name}...")
-        dfs = fetch_prometheus_metrics(query, days=days_to_inspect)
+        dfs = fetch_prometheus_metrics(query, days=DAYS_TO_INSPECT)
         
         if dfs:
-            anomalies_list = detect_anomalies_with_prophet(dfs, sensitivity=0.1, deviation_threshold=deviation_threshold)
+            anomalies_list = detect_anomalies_with_prophet(dfs, sensitivity=0.1, deviation_threshold=DEVIATION_THRESHOLD)
             for anomalies in anomalies_list:
                 if not anomalies.empty:
                     # Filter out rows where 'yhat', 'lower_bound', or 'upper_bound' are below 0
@@ -119,11 +127,15 @@ def main():
                         print(f"Failed to analyze anomalies with ChatGPT for {metric_name} (Partner: {partner}).")
                     
                     # Sanitize metric name to ensure it's safe for use as a file name
-                    safe_metric_name = metric_name.replace("/", "_").replace(" ", "_")  # Replace slashes and spaces with underscores
-                    filename = f"anomalies_{safe_metric_name}_partner_{partner}.csv"
+                    safe_metric_name = metric_name.replace("/", "_").replace(" ", "_")
+
+                    os.makedirs(date_str, exist_ok=True)
+                    filename = f"{date_str}/anomalies_{safe_metric_name}_partner_{partner}.csv"
+                    
                     if not anomalies.empty:
-                        anomalies.to_csv(filename, index=False)
-                        print(f"Anomalies for {metric_name} (Partner: {partner}) outputted to CSV: {filename}")
+                        if CSV_OUTPUT:
+                            anomalies.to_csv(filename, index=False)
+                        print(f"Anomalies for {metric_name} (Partner: {partner})")
                     else:
                         print(f"No non-negative anomalies detected by Prophet for {metric_name} (Partner: {partner}).")
                 else:
