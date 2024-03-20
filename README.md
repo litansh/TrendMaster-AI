@@ -17,7 +17,7 @@ The anomaly detection system integrates several key technologies:
 
 ### System Setup and Configuration
 
-The initial phase (Which I didn't have a significant portion of...) involved setting up Prometheus to ensure comprehensive metric collection across the system. This setup included configuring targets and establishing appropriate scrape intervals to gather data efficiently. Concurrently, Grafana dashboards were configured (Also had very little with...) to visualize the metrics collected, facilitating easy monitoring and anomaly detection. A critical component of this phase was integrating Prophet and ChatGPT to process the data. This integration required establishing a server or cloud function that could access Prometheus data and interact with OpenAI's API, enabling the system to forecast anomalies and analyze them with AI insights.
+Having Prometheus to ensure comprehensive metric collection across the system, And Grafana dashboards to visualize the metrics collected, facilitating easy monitoring and anomaly detection. A critical component of this phase was integrating Prophet and ChatGPT to process the data. This integration required establishing a server or cloud function that could access Prometheus data and interact with OpenAI's API, enabling the system to forecast anomalies and analyze them with AI insights.
 
 ### Adjusting Sensitivity
 
