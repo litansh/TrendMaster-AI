@@ -13,10 +13,10 @@ The anomaly detection system integrates several key technologies:
 - **Grafana**: Offers powerful visualization tools for the metrics collected by Prometheus, enabling easy identification of anomalies.
 - **ChatGPT**: Enhances the analysis of detected anomalies by providing AI-driven insights, making the identification process more insightful and actionable.
 
-### How-To Guide
+## How-To Guide
 WIP
 
-## Running it locally
+### Running it locally
 
 - Create a `config.yaml` file under the `config` directory
 Fill it like so:
