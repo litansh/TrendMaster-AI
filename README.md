@@ -18,7 +18,7 @@ The anomaly detection system integrates several key technologies:
 ### Running It Locally
 
 - As a prerequisite; Create a directory named `config` in the top directory, as well as a file named `/config/config.yaml` with the following content:
-```
+```yaml
     PROMETHEUS_URL: '[Prometheus-End-Point]'
     OPENAI_API_KEY: '[CHAT-GPT-API-KEY]'
     GRAFANA_DASHBOARD_URL: '[Grafana-Dash]'
@@ -30,7 +30,7 @@ The anomaly detection system integrates several key technologies:
 - Navigate to the `/scripts/` directory
 
 - Run:
-```
+```yaml
     python3 anomaly_detection.py
 ```
 ### Running It In the Cloud
