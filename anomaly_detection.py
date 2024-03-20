@@ -102,10 +102,12 @@ def main():
     metrics_queries = {
         'Nginx Requests Per Minute - 2xx/3xx': 'sum by (partner) (increase(service_nginx_request_time_s_count{path!="", partner!=""}[1m]))'
     }
+    
     if CSV_OUTPUT:
         if os.path.isdir(date_str):
             shutil.rmtree(date_str)
         os.makedirs(date_str, exist_ok=True)
+        
     for metric_name, query in metrics_queries.items():
         print(f"Analyzing {metric_name}...")
         dfs = fetch_prometheus_metrics(query, days=DAYS_TO_INSPECT)
