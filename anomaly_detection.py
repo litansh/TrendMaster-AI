@@ -3,11 +3,15 @@ import openai
 import pandas as pd
 from prophet import Prophet
 from datetime import datetime, timedelta
+import yaml
 
-# Configuration
-PROMETHEUS_URL = 'XXX'
-OPENAI_API_KEY = 'YYY'
-GRAFANA_DASHBOARD_URL = 'ZZZ'
+# Read configuration from config.yaml
+with open("config.yaml", "r") as yamlfile:
+    cfg = yaml.safe_load(yamlfile)
+
+PROMETHEUS_URL = cfg['PROMETHEUS_URL']
+OPENAI_API_KEY = cfg['OPENAI_API_KEY']
+GRAFANA_DASHBOARD_URL = cfg['GRAFANA_DASHBOARD_URL']
 
 openai.api_key = OPENAI_API_KEY
 
