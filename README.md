@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document serves as a comprehensive guide to the implementation of an advanced anomaly detection system designed for real-time monitoring of system metrics. Leveraging the capabilities of Prometheus for metric collection, Prophet for forecasting and anomaly detection, and Grafana for visualization, this system is further enhanced with AI-driven insights through ChatGPT integration. The goal is to provide a robust solution for proactively identifying and addressing system anomalies, thereby enhancing system reliability and performance.
+This document is a comprehensive guide to implementing an advanced anomaly detection system designed for real-time monitoring of system metrics. Leveraging the capabilities of Prometheus for metric collection, Prophet for forecasting and anomaly detection, and Grafana for visualization, this system is further enhanced with AI-driven insights through ChatGPT integration. The goal is to provide a robust solution for proactively identifying and addressing system anomalies and improving system reliability and performance.
 
 ## System Architecture
 
@@ -17,19 +17,19 @@ The anomaly detection system integrates several key technologies:
 
 ### System Setup and Configuration
 
-The initial phase involved setting up Prometheus to ensure comprehensive metric collection across the system. This setup included configuring targets and establishing appropriate scrape intervals to gather data efficiently. Concurrently, Grafana dashboards were configured to visualize the metrics collected, facilitating easy monitoring and anomaly detection. A critical component of this phase was integrating Prophet and ChatGPT to process the data. This integration required establishing a server or cloud function that could access Prometheus data and interact with OpenAI's API, enabling the system to forecast anomalies and analyze them with AI insights.
+The initial phase (Which I didn't have a significant portion of...) involved setting up Prometheus to ensure comprehensive metric collection across the system. This setup included configuring targets and establishing appropriate scrape intervals to gather data efficiently. Concurrently, Grafana dashboards were configured (Also had very little with...) to visualize the metrics collected, facilitating easy monitoring and anomaly detection. A critical component of this phase was integrating Prophet and ChatGPT to process the data. This integration required establishing a server or cloud function that could access Prometheus data and interact with OpenAI's API, enabling the system to forecast anomalies and analyze them with AI insights.
 
 ### Adjusting Sensitivity
 
-A key aspect of the implementation was determining the optimal sensitivity levels for anomaly detection. Starting with Prophet's default settings, adjustments were made based on the specific characteristics of our data, such as volume and variability. The objective was to achieve a balance where the system could reliably detect anomalies without generating excessive false positives. This process involved extensive testing and validation using historical data, allowing for the refinement of sensitivity settings to improve detection accuracy.
+A vital aspect of the implementation was determining the optimal sensitivity levels for anomaly detection. Starting with Prophet's default settings, adjustments were made based on the specific characteristics of our data, such as volume and variability. The objective was to achieve a balance where the system could reliably detect anomalies without generating excessive false positives. This process involved extensive testing and validation using historical data, allowing for the refinement of sensitivity settings to improve detection accuracy.
 
 ### Deployment Environment
 
-Choosing the right deployment environment was crucial, with options between on-premises and cloud-based solutions. Factors such as data security, scalability, and access to computational resources influenced this decision. Following the selection, the anomaly detection system was deployed, ensuring it had continuous access to Prometheus metrics and could communicate with Grafana and ChatGPT as needed.
+Choosing the right deployment environment was crucial, with options between on-premises and cloud-based solutions. Data security, scalability, and access to computational resources influenced this decision. Following the selection, the anomaly detection system was deployed, ensuring it had continuous access to Prometheus metrics and could communicate with Grafana and ChatGPT as needed.
 
 ### Output and Notification
 
-The system was designed to output anomalies in a clear and actionable format, detailing the affected metric, the nature of the anomaly, and potential insights from ChatGPT. To facilitate timely responses, integration with communication tools like Slack or Microsoft Teams was set up, automating the notification process to alert relevant teams about detected anomalies.
+The system was designed to output anomalies in a clear and actionable format, detailing the affected metric, the nature of the anomaly, and potential insights from ChatGPT. Integration with communication tools like Slack or Microsoft Teams was set up to facilitate timely responses, automating the notification process to alert relevant teams about detected anomalies.
 
 ### Towards Full Automation
 
@@ -44,8 +44,5 @@ WIP
 
 ## Conclusion
 
-The implementation of this anomaly detection system represents a significant advancement in our monitoring capabilities. By leveraging cutting-edge technologies and AI-driven insights, we have established a proactive approach to identifying and addressing system anomalies, thereby enhancing our operational reliability and performance.
+Implementing this anomaly detection system represents a significant advancement in our monitoring capabilities. By leveraging cutting-edge technologies and AI-driven insights, we have established a proactive approach to identifying and addressing system anomalies, thereby enhancing our operational reliability and performance.
 
----
-
-This README format provides a professional overview of the anomaly detection system's implementation, focusing on the steps taken and the technologies used. It's structured to offer clear insights into the project's objectives, architecture, and detailed implementation process.
