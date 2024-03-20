@@ -16,10 +16,9 @@ The anomaly detection system integrates several key technologies:
 ## How-To Guide
 WIP
 
-### Running it locally
+### Running It Locally
 
-- Create a `config.yaml` file under the `config` directory
-Fill it like so:
+- Create a directory named `config`, and there should be a file named `config.yaml` with the following content:
 ```
     PROMETHEUS_URL: '[Prometheus-End-Point]'
     OPENAI_API_KEY: '[CHAT-GPT-API-KEY]'
