@@ -1,56 +1,53 @@
-name: Build, Push and Deploy
+name: Docker Build and Push
 
 on:
   push:
     branches:
-      - main  # Set to your default branch
+      - main # Adjust to your main branch name
 
 jobs:
-  build-and-push:
-    name: Build and Push Docker image
+  build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout Code
+        uses: actions/checkout@v2
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
+      - name: Set up QEMU
+        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
+      - name: Login to Docker Hub
+        run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    - name: Build, tag, and push image to Amazon ECR
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: litanshamir/anomaly-detection:latest
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-  deploy:
-    name: Deploy to Kubernetes
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+  # deploy:
+  #   name: Deploy to Kubernetes
+  #   needs: build-and-push
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v2
 
-    - name: Set up Kustomize
-      uses: imranismail/setup-kustomize@v1
+  #   - name: Set up Kustomize
+  #     uses: imranismail/setup-kustomize@v1
 
-    - name: Deploy to Kubernetes
-      env:
-        KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
-        IMAGE: ${{ needs.build-and-push.outputs.image }}
-      run: |
-        echo "$KUBE_CONFIG_DATA" | base64 -d > $HOME/.kube/config
-        kubectl set image -f deployment.yaml your-container=$IMAGE
-        kubectl apply -f deployment.yaml
+  #   - name: Deploy to Kubernetes
+  #     env:
+  #       KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+  #       IMAGE: ${{ needs.build-and-push.outputs.image }}
+  #     run: |
+  #       echo "$KUBE_CONFIG_DATA" | base64 -d > $HOME/.kube/config
+  #       kubectl set image -f deployment.yaml your-container=$IMAGE
+  #       kubectl apply -f deployment.yaml
