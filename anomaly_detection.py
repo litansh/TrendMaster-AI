@@ -9,7 +9,6 @@ import os
 import shutil
 
 current_date = datetime.now()
-
 date_str = current_date.strftime('%Y-%m-%d')
 
 with open("config.yaml", "r") as yamlfile:
@@ -103,8 +102,10 @@ def main():
     metrics_queries = {
         'Nginx Requests Per Minute - 2xx/3xx': 'sum by (partner) (increase(service_nginx_request_time_s_count{path!="", partner!=""}[1m]))'
     }
-    if os.path.isdir(date_str) and CSV_OUTPUT:
-        shutil.rmtree(date_str)
+    if CSV_OUTPUT:
+        if os.path.isdir(date_str):
+            shutil.rmtree(date_str)
+        os.makedirs(date_str, exist_ok=True)
     for metric_name, query in metrics_queries.items():
         print(f"Analyzing {metric_name}...")
         dfs = fetch_prometheus_metrics(query, days=DAYS_TO_INSPECT)
@@ -129,7 +130,6 @@ def main():
                     # Sanitize metric name to ensure it's safe for use as a file name
                     safe_metric_name = metric_name.replace("/", "_").replace(" ", "_")
 
-                    os.makedirs(date_str, exist_ok=True)
                     filename = f"{date_str}/anomalies_{safe_metric_name}_partner_{partner}.csv"
                     
                     if not anomalies.empty:
