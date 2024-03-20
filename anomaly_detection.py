@@ -102,7 +102,7 @@ def main():
     metrics_queries = {
         'Nginx Requests Per Minute - 2xx/3xx': 'sum by (partner) (increase(service_nginx_request_time_s_count{path!="", partner!=""}[1m]))'
     }
-    
+
     if CSV_OUTPUT:
         if os.path.isdir(date_str):
             shutil.rmtree(date_str)
@@ -132,8 +132,9 @@ def main():
                     # Sanitize metric name to ensure it's safe for use as a file name
                     safe_metric_name = metric_name.replace("/", "_").replace(" ", "_")
 
-                    filename = f"{date_str}/anomalies_{safe_metric_name}_partner_{partner}.csv"
-                    
+                    # filename = f"{date_str}/anomalies_{safe_metric_name}_partner_{partner}.csv"
+                    filename = f"/data/{date_str}/anomalies_{safe_metric_name}_partner_{partner}.csv"
+
                     if not anomalies.empty:
                         if CSV_OUTPUT:
                             anomalies.to_csv(filename, index=False)

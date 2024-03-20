@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: anomaly-detection-cronjob
+spec:
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: anomaly-detection
+            image: litansh/anomaly-detection:latest
+            volumeMounts:
+            - name: data-vol
+              mountPath: "/data"
+            env:
+              - name: OPENAI_API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: openai-api-key
+                    key: OPENAI_API_KEY
+          volumes:
+          - name: data-vol
+            persistentVolumeClaim:
+              claimName: anomaly-detection-pvc
+          restartPolicy: OnFailure
