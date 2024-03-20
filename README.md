@@ -36,7 +36,7 @@ Fill it like so:
     python3 anomaly_detection.py
 ```
 
-## Implementation Steps
+## What's it all about?
 
 ### System Setup and Configuration
 
