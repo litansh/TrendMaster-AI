@@ -19,4 +19,4 @@ RUN apt-get update && \
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "./anomaly_detection.py"]
+CMD ["python", "./scripts/anomaly_detection.py"]

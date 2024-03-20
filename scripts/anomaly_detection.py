@@ -11,7 +11,7 @@ import shutil
 current_date = datetime.now()
 date_str = current_date.strftime('%Y-%m-%d')
 
-with open("config.yaml", "r") as yamlfile:
+with open("../config/config.yaml", "r") as yamlfile:
     cfg = yaml.safe_load(yamlfile)
 
 PROMETHEUS_URL = cfg['PROMETHEUS_URL']
