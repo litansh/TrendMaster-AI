@@ -14,11 +14,10 @@ The anomaly detection system integrates several key technologies:
 - **ChatGPT**: Enhances the analysis of detected anomalies by providing AI-driven insights, making the identification process more insightful and actionable.
 
 ## How-To Guide
-WIP
 
 ### Running It Locally
 
-- Create a directory named `config`, and there should be a file named `config.yaml` with the following content:
+- As a prerequisite; Create a directory named `config` in the top directory, as well as a file named `/config/config.yaml` with the following content:
 ```
     PROMETHEUS_URL: '[Prometheus-End-Point]'
     OPENAI_API_KEY: '[CHAT-GPT-API-KEY]'
@@ -34,8 +33,10 @@ WIP
 ```
     python3 anomaly_detection.py
 ```
+### Running It In the Cloud
+WIP
 
-## What's it all about?
+## What's It All About?
 
 ### System Setup and Configuration
 
