@@ -124,12 +124,17 @@ def main():
                     print(f"Anomalies detected by Prophet for {metric_name} (Partner: {partner}):", anomalies)
                     grafana_link = generate_grafana_link(metric_name, partner)
                     print(grafana_link)
-                    analysis_result = analyze_metrics_with_chatgpt(anomalies, metric_name)
-                    if analysis_result:
-                        print(f"Analysis result from ChatGPT for {metric_name} (Partner: {partner}):", analysis_result)
-                    else:
-                        print(f"Failed to analyze anomalies with ChatGPT for {metric_name} (Partner: {partner}).")
+
+                    ### To get an analysis via GPT uncomment the following block ###
+
+                    # analysis_result = analyze_metrics_with_chatgpt(anomalies, metric_name)
+                    # if analysis_result:
+                    #     print(f"Analysis result from ChatGPT for {metric_name} (Partner: {partner}):", analysis_result)
+                    # else:
+                    #     print(f"Failed to analyze anomalies with ChatGPT for {metric_name} (Partner: {partner}).")
                     
+                    ################################################################
+
                     # Sanitize metric name to ensure it's safe for use as a file name
                     safe_metric_name = metric_name.replace("/", "_").replace(" ", "_")
 
