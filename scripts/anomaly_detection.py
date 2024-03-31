@@ -21,6 +21,8 @@ GRAFANA_DASHBOARD_URL = cfg['GRAFANA_DASHBOARD_URL']
 DAYS_TO_INSPECT = cfg.get('DAYS_TO_INSPECT', 7)  # Default to 7 if not specified
 DEVIATION_THRESHOLD = cfg.get('DEVIATION_THRESHOLD', 0.2)  # Default to 0.2 if not specified
 CSV_OUTPUT = cfg.get('CSV_OUTPUT', False)
+GPT_ON = cfg.get('GPT_ON', False)
+DOCKER = cfg.get('DOCKER', False)
 
 openai.api_key = OPENAI_API_KEY
 
@@ -125,24 +127,20 @@ def main():
                     grafana_link = generate_grafana_link(metric_name, partner)
                     print(grafana_link)
 
-                    ### To get an analysis via GPT uncomment the following block ###
-
-                    # analysis_result = analyze_metrics_with_chatgpt(anomalies, metric_name)
-                    # if analysis_result:
-                    #     print(f"Analysis result from ChatGPT for {metric_name} (Partner: {partner}):", analysis_result)
-                    # else:
-                    #     print(f"Failed to analyze anomalies with ChatGPT for {metric_name} (Partner: {partner}).")
+                    if GPT_ON:
+                        analysis_result = analyze_metrics_with_chatgpt(anomalies, metric_name)
+                        if analysis_result:
+                            print(f"Analysis result from ChatGPT for {metric_name} (Partner: {partner}):", analysis_result)
+                        else:
+                            print(f"Failed to analyze anomalies with ChatGPT for {metric_name} (Partner: {partner}).")
                     
-                    ################################################################
-
                     # Sanitize metric name to ensure it's safe for use as a file name
                     safe_metric_name = metric_name.replace("/", "_").replace(" ", "_")
 
-                    # Uncomment to following line when testing locally
-                    filename = f"script_csv_outputs/{date_str}/anomalies_{safe_metric_name}_partner_{partner}.csv"
-
-                    # Uncomment the next line when Dockerizing
-                    # filename = f"/data/{date_str}/anomalies_{safe_metric_name}_partner_{partner}.csv"
+                    if DOCKER:
+                        filename = f"/data/{date_str}/anomalies_{safe_metric_name}_partner_{partner}.csv"
+                    else:
+                        filename = f"script_csv_outputs/{date_str}/anomalies_{safe_metric_name}_partner_{partner}.csv"
 
                     if not anomalies.empty:
                         if CSV_OUTPUT:
