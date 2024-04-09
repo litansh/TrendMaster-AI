@@ -19,12 +19,19 @@ The anomaly detection system integrates several key technologies:
 
 - As a prerequisite; Create a directory named `config` in the top directory, as well as a file named `/config/config.yaml` with the following content:
 ```yaml
-    PROMETHEUS_URL: '[Prometheus-End-Point]'
-    OPENAI_API_KEY: '[CHAT-GPT-API-KEY]'
-    GRAFANA_DASHBOARD_URL: '[Grafana-Dash]'
-    DAYS_TO_INSPECT: [By-Default-7]
-    DEVIATION_THRESHOLD: [By-Default-0.2]
-    CSV_OUTPUT: [By-Default-False]
+# Required
+PROMETHEUS_URL: 'https://XXXXXX'
+GRAFANA_DASHBOARD_URL: 'https://XXXXXX'
+
+# Optional
+DAYS_TO_INSPECT: 7
+DEVIATION_THRESHOLD: 0.5
+CSV_OUTPUT: True
+DOCKER: False # DOCKER should be set to false for testing the script without dockerizing the script
+
+# To enable GPT analysis
+GPT_ON: False
+OPENAI_API_KEY: 'XXXXXXX'
 ```
 
 - Navigate to the `/scripts/` directory
