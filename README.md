@@ -1,17 +1,19 @@
-# Time Series DB Based Anomaly Detection using Prophet and LLM 
+# Time Series DB-Based Platform using Prophet and LLM 
+
+TrendMaster-AI is a versatile platform designed for forecasting and trend analysis across various domains. At its core, it combines the robustness of Prometheus for metric collection, the predictive power of Prophet for forecasting, and the visualization capabilities of Grafana, all while incorporating AI-driven insights through ChatGPT integration. Whether it's for anomaly detection in system metrics, understanding market trends, or forecasting resource needs, TrendMaster-AI provides a comprehensive toolset for data-driven decision-making and operational efficiency. With its scalable architecture and AI-enhanced analyses, it paves the way for future expansions into diverse predictive applications, offering actionable insights and automating critical workflows.
+
+## System Architecture
+
+- **Prometheus**: Collects and stores metrics as time series data, providing a reliable foundation for forecasting trends.
+- **Prophet**: Utilized for its advanced forecasting capabilities, especially in handling seasonal data variations.
+- **Grafana**: Offers powerful visualization tools for the metrics collected by Prometheus.
+- **ChatGPT**: Enhances the analysis by providing AI-driven insights, making the identification process more insightful and actionable.
+
+## Anomaly Detection
 
 ## Overview
 
 This document is a comprehensive guide to implementing an advanced anomaly detection system designed for real-time monitoring of system metrics. Leveraging the capabilities of Prometheus for metric collection, Prophet for forecasting and anomaly detection, and Grafana for visualization, this system is further enhanced with AI-driven insights through ChatGPT integration. The goal is to provide a robust solution for proactively identifying and addressing system anomalies and improving system reliability and performance.
-
-## System Architecture
-
-The anomaly detection system integrates several key technologies:
-
-- **Prometheus**: Collects and stores metrics as time series data, providing a reliable foundation for anomaly detection.
-- **Prophet**: Utilized for its advanced forecasting capabilities, especially in handling seasonal data variations, to predict and detect anomalies.
-- **Grafana**: Offers powerful visualization tools for the metrics collected by Prometheus, enabling easy identification of anomalies.
-- **ChatGPT**: Enhances the analysis of detected anomalies by providing AI-driven insights, making the identification process more insightful and actionable.
 
 ## How-To Guide
 
