@@ -62,6 +62,9 @@ def detect_anomalies_with_prophet(dfs, sensitivity=0.05, deviation_threshold=0.2
     for df in dfs:
         df = df[df['y'] >= 0]  # Ensure non-negative 'y' values
         m = Prophet(changepoint_prior_scale=sensitivity)
+        if df.dropna().shape[0] < 2:
+            print(f"{current_date} ERROR: fit equals {df.dropna().shape[0]}. Insufficient data to fit model.")
+            continue  # Skip to the next DataFrame
         m.fit(df[['ds', 'y']])
         future = m.make_future_dataframe(periods=24, freq='h')
         forecast = m.predict(future)
