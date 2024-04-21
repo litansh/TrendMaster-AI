@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt /tmp/
 
 RUN pip install --no-cache-dir -U pip \
-    && pip install numpy pandas \
+    && pip install numpy pandas convertdate \
     && pip install --no-cache-dir -r /tmp/requirements.txt
 
 COPY . /app
