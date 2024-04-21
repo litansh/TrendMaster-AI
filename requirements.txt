@@ -1,7 +1,9 @@
-holidays==0.10.3
 numpy==1.23.1
+pandas==1.2.3
+pyyaml==5.4.1
+holidays==0.10.3
 requests==2.25.1
 openai==0.10.2
-pandas==1.2.3
+pymeeus==0.5.12  # if required, specify the version
+pystan==2.19.1.1  # Prophet dependency that might need explicit installation
 prophet==1.0
-pyyaml==5.4.1
