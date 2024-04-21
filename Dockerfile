@@ -13,6 +13,7 @@ COPY requirements.txt /tmp/
 
 # Upgrade pip and install packages individually
 RUN pip install --no-cache-dir -U pip
+RUN pip install --no-cache-dir Cython>=0.22
 RUN pip install --no-cache-dir numpy==1.23.1
 RUN pip install --no-cache-dir pandas==1.2.3
 RUN pip install --no-cache-dir pyyaml==5.4.1
