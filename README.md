@@ -28,6 +28,7 @@ GRAFANA_DASHBOARD_URL: 'https://XXXXXX'
 # Optional
 DAYS_TO_INSPECT: 7
 DEVIATION_THRESHOLD: 0.5
+EXCESS_DEVIATION_THRESHOLD: 1
 CSV_OUTPUT: True
 DOCKER: False # DOCKER should be set to false for testing the script without dockerizing the script
 
