@@ -18,8 +18,9 @@ with open("../config/config.yaml", "r") as yamlfile:
 PROMETHEUS_URL = cfg['PROMETHEUS_URL']
 OPENAI_API_KEY = cfg['OPENAI_API_KEY']
 GRAFANA_DASHBOARD_URL = cfg['GRAFANA_DASHBOARD_URL']
-DAYS_TO_INSPECT = cfg.get('DAYS_TO_INSPECT', 7)  # Default to 7 if not specified
-DEVIATION_THRESHOLD = cfg.get('DEVIATION_THRESHOLD', 0.2)  # Default to 0.2 if not specified
+DAYS_TO_INSPECT = cfg.get('DAYS_TO_INSPECT', 7)
+DEVIATION_THRESHOLD = cfg.get('DEVIATION_THRESHOLD', 0.2)
+EXCESS_DEVIATION_THRESHOLD = cfg.get('EXCESS_DEVIATION_THRESHOLD', 0.1)
 CSV_OUTPUT = cfg.get('CSV_OUTPUT', False)
 GPT_ON = cfg.get('GPT_ON', False)
 DOCKER = cfg.get('DOCKER', False)
@@ -57,13 +58,13 @@ def fetch_prometheus_metrics(query, days=7):
         print(f"Error fetching metrics from Prometheus: {e}")
         return []
 
-def detect_anomalies_with_prophet(dfs, sensitivity=0.05, deviation_threshold=0.2):
+def detect_anomalies_with_prophet(dfs, sensitivity=0.05, deviation_threshold=0.2, excess_deviation_threshold=0.1):
     anomalies_list = []
     for df in dfs:
         df = df[df['y'] >= 0]  # Ensure non-negative 'y' values
         m = Prophet(changepoint_prior_scale=sensitivity)
         if df.dropna().shape[0] < 2:
-            print(f"{current_date} ERROR: fit equals {df.dropna().shape[0]}. Insufficient data to fit model.")
+            print(f"{current_date} ERROR: Prophet fit equals {df.dropna().shape[0]}. Insufficient data to fit model.")
             continue  # Skip to the next DataFrame
         m.fit(df[['ds', 'y']])
         future = m.make_future_dataframe(periods=24, freq='h')
@@ -73,13 +74,15 @@ def detect_anomalies_with_prophet(dfs, sensitivity=0.05, deviation_threshold=0.2
         
         forecast['lower_bound'] = forecast['yhat'] * (1 - deviation_threshold)
         forecast['upper_bound'] = forecast['yhat'] * (1 + deviation_threshold)
+        forecast['excessive_deviation'] = forecast['fact'] > forecast['upper_bound'] * (1 + excess_deviation_threshold)
         forecast['anomaly'] = ((forecast['fact'] < forecast['lower_bound']) | (forecast['fact'] > forecast['upper_bound'])) & (forecast['fact'] >= 0)
         
-        anomalies = forecast[forecast['anomaly']]
+        anomalies = forecast[forecast['anomaly'] | forecast['excessive_deviation']]
         if not anomalies.empty:
-            anomalies_list.append(anomalies[['ds', 'fact', 'yhat', 'lower_bound', 'upper_bound', 'partner']])
+            anomalies_list.append(anomalies[['ds', 'fact', 'yhat', 'lower_bound', 'upper_bound', 'partner', 'excessive_deviation']])
     
     return anomalies_list
+
 
 def generate_grafana_link(metric_name, partner):
     dashboard_ids = {
@@ -119,7 +122,7 @@ def main():
         dfs = fetch_prometheus_metrics(query, days=DAYS_TO_INSPECT)
         
         if dfs:
-            anomalies_list = detect_anomalies_with_prophet(dfs, sensitivity=0.1, deviation_threshold=DEVIATION_THRESHOLD)
+            anomalies_list = detect_anomalies_with_prophet(dfs, sensitivity=0.1, deviation_threshold=DEVIATION_THRESHOLD, excess_deviation_threshold=EXCESS_DEVIATION_THRESHOLD)
             for anomalies in anomalies_list:
                 if not anomalies.empty:
                     # Filter out rows where 'yhat', 'lower_bound', or 'upper_bound' are below 0
@@ -137,7 +140,6 @@ def main():
                         else:
                             print(f"Failed to analyze anomalies with ChatGPT for {metric_name} (Partner: {partner}).")
                     
-                    # Sanitize metric name to ensure it's safe for use as a file name
                     safe_metric_name = metric_name.replace("/", "_").replace(" ", "_")
 
                     if DOCKER:
