@@ -1,22 +1,20 @@
 FROM python:3.9-slim
 
-WORKDIR /usr/src/app
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    python3-dev \
+    libgfortran5 \
+    libatlas-base-dev \
+    libsodium-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY . .
+COPY requirements.txt /tmp/
 
-# Install system dependencies for Prophet
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        build-essential \
-        python3-dev \
-        git \
-        libatlas-base-dev \
-        liblapack-dev \
-        gfortran \
-        libgsl-dev \
-        libsuitesparse-dev && \
-    rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir -U pip \
+    && pip install --no-cache-dir -r /tmp/requirements.txt
 
-RUN pip install --no-cache-dir -r requirements.txt
+COPY . /app
+WORKDIR /app
 
 CMD ["python", "./scripts/anomaly_detection.py"]

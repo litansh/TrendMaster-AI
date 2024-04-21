@@ -1,3 +1,5 @@
+holidays==0.10.3
+numpy==1.23.1
 requests==2.25.1
 openai==0.10.2
 pandas==1.2.3
