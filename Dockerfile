@@ -15,7 +15,7 @@ COPY requirements.txt /tmp/
 
 # Update pip and install critical dependencies explicitly
 RUN pip install --no-cache-dir -U pip && \
-    pip install --no-cache-dir numpy==1.23.1 pandas==1.2.3 convertdate holidays cython pystan
+    pip install --no-cache-dir numpy==1.23.1 pandas==1.2.3 convertdate holidays cython pystan lunarcalendar ephem
 
 # Install the remaining Python packages from requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
