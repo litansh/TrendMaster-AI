@@ -13,9 +13,9 @@ RUN apt-get update && apt-get install -y \
 # Copy the requirements file to the container
 COPY requirements.txt /tmp/
 
-# Update pip and install numpy and pandas separately to ensure they're available for other packages
+# Update pip and install critical dependencies explicitly
 RUN pip install --no-cache-dir -U pip && \
-    pip install --no-cache-dir numpy==1.23.1 pandas==1.2.3
+    pip install --no-cache-dir numpy==1.23.1 pandas==1.2.3 convertdate holidays cython pystan
 
 # Install the remaining Python packages from requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
