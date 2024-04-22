@@ -15,7 +15,8 @@ COPY requirements.txt /tmp/
 
 # Update pip and install critical dependencies explicitly
 RUN pip install --no-cache-dir -U pip && \
-    pip install --no-cache-dir numpy==1.23.1 pandas==1.2.3 convertdate holidays cython pystan lunarcalendar ephem
+    pip install --no-cache-dir numpy==1.23.1 pandas==1.2.3 convertdate cython pystan lunarcalendar ephem \
+    && pip install --no-cache-dir holidays==0.9.12  # Adjust the version of holidays here
 
 # Install the remaining Python packages from requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
@@ -24,4 +25,4 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt
 COPY . /app
 WORKDIR /app
 
-CMD ["python", "./scripts/anomaly_detection.py"]
+CMD ["python", "./scripts/an
