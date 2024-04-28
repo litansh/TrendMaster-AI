@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir Cython
 RUN pip install --no-cache-dir PyYAML==6.0.1 --only-binary=:all:
 
-# Install other dependencies from the requirements file
+# Copy and install Python dependencies from requirements.txt
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
