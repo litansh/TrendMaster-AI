@@ -11,13 +11,15 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Update pip and install critical dependencies
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Install Cython and pre-built wheel of PyYAML
+# Install Cython first to avoid build issues later
 RUN pip install --no-cache-dir Cython
+
+# Attempt to install PyYAML and other problematic packages as binaries
 RUN pip install --no-cache-dir PyYAML==6.0.1 --only-binary=:all:
 
-# Copy and install Python dependencies from requirements.txt
+# Copy and explicitly install remaining Python dependencies from requirements.txt
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt --verbose
 
 # Multi-stage: final image
 FROM python:3.9-alpine
