@@ -11,9 +11,9 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Update pip and install critical dependencies
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Install Cython and PyYAML
+# Install Cython and pre-built wheel of PyYAML
 RUN pip install --no-cache-dir Cython
-RUN pip install --no-cache-dir PyYAML==5.4.1
+RUN pip install --no-cache-dir PyYAML==5.4.1 --only-binary=:all:
 
 # Install other dependencies from the requirements file
 COPY requirements.txt .
