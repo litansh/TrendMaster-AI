@@ -6,7 +6,7 @@ cython
 pandas==1.2.3 
 convertdate 
 lunarcalendar 
-holidays>=0.13
+holidays==0.13
 ephem 
 tqdm
 pystan==3.9.1
