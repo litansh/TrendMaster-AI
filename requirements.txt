@@ -1,13 +1,4 @@
-# numpy==1.23.1
-# cython
 requests==2.25.1
 openai==0.10.2
-# pandas==1.2.3
 pyyaml==5.4.1
-# convertdate
-# pystan
-# lunarcalendar
-# ephem
-# tqdm
 
-# prophet==1.0.1

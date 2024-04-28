@@ -1,6 +1,6 @@
 FROM python:3.9-slim
 
-# Install necessary system packages
+# Install necessary system packages and clean up in one layer to reduce image size
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
@@ -8,19 +8,14 @@ RUN apt-get update && apt-get install -y \
     libgfortran5 \
     libatlas-base-dev \
     libsodium-dev \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
-# Update pip and install critical dependencies first
+# Update pip and install Python dependencies in one layer
 RUN pip install --no-cache-dir -U pip \
- && pip install --no-cache-dir numpy==1.23.1 cython
-
-# Install other dependencies
-RUN pip install --no-cache-dir pandas==1.2.3 convertdate lunarcalendar holidays==0.10.3 ephem tqdm
-
-# Install pystan and prophet separately
-RUN pip install --no-cache-dir pystan==2.19.1.1 \
- && pip install --no-cache-dir prophet==1.0.1
+ && pip install --no-cache-dir numpy==1.23.1 cython \
+ && pip install --no-cache-dir pandas==1.2.3 convertdate lunarcalendar holidays==0.10.3 ephem tqdm \
+ && pip install --no-cache-dir pystan==2.19.1.1 prophet==1.0.1
 
 # Copy your application to the container
 COPY . /app
