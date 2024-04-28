@@ -9,5 +9,5 @@ lunarcalendar
 holidays==0.11.1
 ephem 
 tqdm
-pystan==2.19.1.1 
+pystan==3.9.1
 prophet==1.0.1
