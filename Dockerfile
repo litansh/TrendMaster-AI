@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt /tmp/
 
 # Update pip and install critical dependencies explicitly
-RUN pip install --no-cache-dir -U pip &&
+RUN pip install --no-cache-dir -U pip
     # pip install --no-cache-dir numpy==1.23.1 pandas==1.2.3 convertdate cython pystan lunarcalendar ephem
 
 # Install holidays with a compatible version before installing prophet
