@@ -1,6 +1,7 @@
 import requests
 import openai
 import pandas as pd
+import holidays
 from prophet import Prophet
 from datetime import datetime, timedelta
 import yaml
