@@ -3,8 +3,9 @@ openai==1.23.6
 pyyaml==5.4.1
 numpy==1.23.1 
 cython
-pandas==1.2.3 
-convertdate 
+pandas==1.2.3
+pymeeus==0.3.13 
+convertdate
 lunarcalendar 
 holidays==0.13
 ephem 
