@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     libgfortran5 \
     libatlas-base-dev \
     libsodium-dev \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the requirements file to the container
@@ -17,10 +18,10 @@ COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir -U pip && \
     pip install --no-cache-dir numpy==1.23.1 pandas==1.2.3 convertdate cython pystan lunarcalendar ephem
 
-# Adjust the version of holidays and upgrade prophet
-RUN pip install --no-cache-dir holidays==0.9.12 && \
-    pip install --no-cache-dir prophet==1.0.1
-    
+# Install holidays with a compatible version before installing prophet
+RUN pip install --no-cache-dir holidays>=0.10.2
+RUN pip install --no-cache-dir prophet==1.0.1
+
 # Install the remaining Python packages from requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
