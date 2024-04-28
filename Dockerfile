@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.9-slim as builder
+FROM python:3.9-slim as builder
 
 RUN apt-get update && apt-get install -y \
     gcc \
@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 COPY requirements.txt .
 RUN pip install --no-cache-dir --only-binary=:all: -r requirements.txt --verbose
 
-FROM --platform=linux/amd64 python:3.9-slim
+FROM python:3.9-slim
 COPY --from=builder /opt/venv /opt/venv
 
 ENV PATH="/opt/venv/bin:$PATH"
