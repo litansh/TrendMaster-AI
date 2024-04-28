@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -U pip \
 RUN pip install --no-cache-dir pandas==1.2.3 convertdate lunarcalendar holidays==0.10.3 ephem tqdm
 
 # Install pystan and prophet separately
-RUN pip install --no-cache-dir pystan \
+RUN pip install --no-cache-dir pystan==2.19.1.1 \
  && pip install --no-cache-dir prophet==1.0.1
 
 # Copy your application to the container
