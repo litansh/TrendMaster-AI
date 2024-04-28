@@ -4,7 +4,6 @@ pyyaml==5.4.1
 numpy==1.23.1 
 cython
 pandas==1.2.3
-pymeeus
 convertdate
 lunarcalendar 
 holidays==0.13
