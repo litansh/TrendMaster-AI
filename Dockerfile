@@ -1,23 +1,21 @@
 # Use an Alpine base image
 FROM python:3.9-alpine as builder
 
-# Install system dependencies for building Python packages
-RUN apk add --no-cache gcc g++ python3-dev libgfortran musl-dev libffi-dev openssl-dev linux-headers libstdc++ make
+# Install build dependencies
+RUN apk add --no-cache gcc g++ python3-dev libgfortran musl-dev libffi-dev openssl-dev make libtool autoconf automake linux-headers libstdc++
 
 # Set up a virtual environment to make dependencies reusable
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Update pip, setuptools, and wheel
+# Update pip and install critical dependencies
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Install Cython separately to avoid build issues
+# Install Cython and PyYAML
 RUN pip install --no-cache-dir Cython
-
-# Install PyYAML separately to handle potential build issues
 RUN pip install --no-cache-dir PyYAML==5.4.1
 
-# Copy and install remaining Python dependencies
+# Install other dependencies from the requirements file
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
