@@ -2,7 +2,7 @@
 FROM python:3.9-alpine as builder
 
 # Install build dependencies
-RUN apk add --no-cache gcc g++ python3-dev libgfortran musl-dev libffi-dev openssl-dev make libtool autoconf automake linux-headers libstdc++ cython
+RUN apk add --no-cache gcc g++ python3-dev libgfortran musl-dev libffi-dev openssl-dev make libtool autoconf automake linux-headers libstdc++
 
 # Set up a virtual environment to make dependencies reusable
 RUN python -m venv /opt/venv
@@ -11,9 +11,9 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Update pip and install critical dependencies
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Install Cython and PyYAML using only binary to avoid compilation
+# Install Cython and use only binary for PyYAML to avoid compilation
 RUN pip install --no-cache-dir Cython
-RUN pip install --no-cache-dir PyYAML --only-binary=:all:
+RUN pip install --no-cache-dir PyYAML==5.4.1 --only-binary=:all:
 
 # Copy and explicitly install remaining Python dependencies from requirements.txt
 COPY requirements.txt .
