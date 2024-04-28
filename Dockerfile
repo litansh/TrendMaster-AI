@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y \
     g++ \
     python3-dev \
     libffi-dev \
-    openssl-dev \
+    libssl-dev \
     make \
     libtool \
     autoconf \
