@@ -11,13 +11,14 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Pre-install critical Python packages
-RUN pip install --no-cache-dir numpy==1.23.1 cython>=0.22
-
 # Copy the requirements file to the container
 COPY requirements.txt /tmp/
 
-# # Install the remaining Python packages from requirements.txt
+# Update pip and install critical dependencies explicitly
+RUN pip install --no-cache-dir -U pip && \
+    pip install --no-cache-dir numpy==1.23.1 pandas==1.2.3 convertdate cython pystan lunarcalendar holidays==0.10.3 ephem tqdm prophet==1.0.1
+
+# Install the remaining Python packages from requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 # Copy your application to the container
