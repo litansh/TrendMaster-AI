@@ -67,14 +67,17 @@ def fetch_prometheus_metrics(query, days):
 
 
 def detect_anomalies_with_prophet(dfs, sensitivity, deviation_threshold, excess_deviation_threshold):
-    """Detect anomalies using Prophet with specified sensitivity and deviation thresholds."""
     anomalies_list = []
     for df in dfs:
         df = df[df['y'] >= 0]
         if len(df) < 2:
             logging.info("Insufficient data to fit model.")
             continue
-        m = Prophet(changepoint_prior_scale=sensitivity)
+        m = Prophet(
+            changepoint_prior_scale=sensitivity,
+            yearly_seasonality=True,
+            weekly_seasonality=True
+        )
         m.fit(df[['ds', 'y']])
         future = m.make_future_dataframe(periods=24, freq='h')
         forecast = m.predict(future)
@@ -127,7 +130,7 @@ def main():
         os.makedirs(img_directory_name, exist_ok=True)
 
     queries = {
-        'Nginx Requests Per Minute - 2xx/3xx': 'sum by (path, partner) (increase(service_nginx_request_time_s_count{path!="", partner!=""}[1m]))'
+        'Nginx Requests Per Minute - 2xx/3xx': 'sum by (partner) (increase(service_nginx_request_time_s_count{path!="", partner!=""}[1m]))'
     }
 
     for metric_name, query in queries.items():
