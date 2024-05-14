@@ -85,7 +85,7 @@ def detect_anomalies_with_prophet(dfs, deviation_threshold, excess_deviation_thr
         if len(df) < 2:
             logging.info("Insufficient data to fit model.")
             continue
-        cp_scale = 0.05 if not is_k8s else 0.15  # Adjust sensitivity based on the type of metric
+        cp_scale = 0.05 if not is_k8s else 0.15
         m = Prophet(changepoint_prior_scale=cp_scale, yearly_seasonality=False, weekly_seasonality=True, daily_seasonality=is_k8s)
         m.fit(df[['ds', 'y']])
         future = m.make_future_dataframe(periods=24, freq='h')
@@ -121,15 +121,12 @@ def visualize_trends(anomalies_list, img_directory_name):
             filename = f"{img_directory_name}/trend_{sanitized_partner}_{sanitized_path}.png"
             plt.title(title)
 
-            # Setting date format on x-axis
             plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
             plt.gca().xaxis.set_major_locator(mdates.DayLocator())
 
-            # Plotting the trend and expected range
             sns.lineplot(x=anomalies['ds'], y=anomalies['yhat'], label='Trend', color='blue')
             plt.fill_between(anomalies['ds'], anomalies['lower_bound'], anomalies['upper_bound'], color='green', alpha=0.3, label='Expected Range')
 
-            # Highlighting anomalies
             normal_points = anomalies[~anomalies['excessive_deviation']]
             excessive_points = anomalies[anomalies['excessive_deviation']]
             sns.scatterplot(x=normal_points['ds'], y=normal_points['fact'], color='grey', marker='o', s=50, label='Normal')
