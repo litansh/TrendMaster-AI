@@ -12,10 +12,8 @@ import hashlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import openai
 
-
 with open("../config/config.yaml", "r") as yamlfile:
     cfg = yaml.safe_load(yamlfile)
-
 
 PROMETHEUS_URL = cfg['PROMETHEUS_URL']
 OPENAI_API_KEY = cfg['OPENAI_API_KEY']
@@ -28,6 +26,7 @@ CSV_OUTPUT = cfg.get('CSV_OUTPUT', False)
 IMG_OUTPUT = cfg.get('IMG_OUTPUT', False)
 GPT_ON = cfg.get('GPT_ON', False)
 DOCKER = cfg.get('DOCKER', False)
+QUERIES = cfg['QUERIES']
 
 current_date = datetime.now()
 date_str = current_date.strftime('%Y-%m-%d')
@@ -63,7 +62,7 @@ def fetch_prometheus_metrics(query, days):
     }
     try:
         response = requests.get(f'{PROMETHEUS_URL}/api/v1/query_range', params=params)
-        response.raise_for_status()  # Raises an HTTPError for bad responses
+        response.raise_for_status()
         results = response.json().get('data', {}).get('result', [])
         return results
     except requests.exceptions.RequestException as e:
@@ -155,25 +154,35 @@ def visualize_trends(anomalies_list, img_directory_name):
             logging.error(f"Error visualizing trends: {e}")
 
 
-def main():
-    logging.basicConfig(level=logging.INFO)
-    queries = {
-        'Nginx Requests Per Minute - 2xx/3xx': 'sum by (path, partner) (increase(service_nginx_request_time_s_count{path!="", partner!=""}[1m]))',
-        'Kubernetes Running Pods - Phoenix': 'sum by (phase, kubernetes_node, pod) (increase(kube_pod_status_phase{phase="Running", kubernetes_node!="", pod=~"kphoenix.*"}[1m]))'
-    }
+def analyze_with_chatgpt(anomalies):
+    analysis_responses = []
+    for anomaly in anomalies:
+        prompt = f"Analyze the following anomalies: {anomaly}"
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "system", "content": "Analyze anomalies."}, {"role": "user", "content": prompt}]
+            )
+            analysis_responses.append(response.choices[0].message['content'])
+        except Exception as e:
+            logging.error(f"Error in ChatGPT analysis: {e}")
+    return analysis_responses
 
+
+def main():
+    logging.basicConfig(level=getattr(logging, cfg.get('LOG_LEVEL', 'INFO')))
     with ThreadPoolExecutor(max_workers=4) as executor:
-        # Submit jobs to executor, keying by metric name
-        futures = {executor.submit(fetch_prometheus_metrics, queries[metric_name], DAYS_TO_INSPECT): metric_name for metric_name in queries}
+        futures = {executor.submit(fetch_prometheus_metrics, QUERIES[metric_name], DAYS_TO_INSPECT): metric_name for metric_name in QUERIES}
         for future in as_completed(futures):
             metric_name = futures[future]
             result_data = future.result()
             if result_data:
                 processed_data = process_metrics(result_data)
-                # Setup directories using the metric name instead of the query
                 csv_dir, img_dir = setup_directories(metric_name)
                 is_k8s = "Kubernetes" in metric_name
                 anomalies_list = detect_anomalies_with_prophet(processed_data, DEVIATION_THRESHOLD, EXCESS_DEVIATION_THRESHOLD, is_k8s=is_k8s)
+                if anomalies_list and GPT_ON:
+                    chat_gpt_responses = analyze_with_chatgpt([anomaly[0] for anomaly in anomalies_list])
                 if anomalies_list:
                     visualize_trends(anomalies_list, img_dir)
                     if CSV_OUTPUT:
