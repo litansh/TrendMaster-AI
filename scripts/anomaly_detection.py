@@ -1,6 +1,7 @@
 import requests
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import seaborn as sns
 from prophet import Prophet
 from datetime import datetime, timedelta
@@ -10,6 +11,7 @@ import shutil
 import openai
 import logging
 import hashlib
+
 
 with open("../config/config.yaml", "r") as yamlfile:
     cfg = yaml.safe_load(yamlfile)
@@ -32,7 +34,6 @@ base_directory_name = f"outputs/{date_str}"
 
 
 def sanitize_filename(s):
-    """Sanitize a string to create a safe filename by hashing it."""
     s = str(s)
     hash_suffix = hashlib.md5(s.encode('utf-8')).hexdigest()[:8]
     s = s.replace('/', '_').replace('\\', '_').replace(':', '_').replace('\n', '_').replace(' ', '_')
@@ -46,11 +47,11 @@ def setup_directories(metric_name):
     os.makedirs(img_dir, exist_ok=True)
     return csv_dir, img_dir
 
+
 openai.api_key = OPENAI_API_KEY
 
 
 def fetch_prometheus_metrics(query, days):
-    """Fetch metrics from Prometheus for the given number of days."""
     end = datetime.now()
     start = end - timedelta(days=days)
     params = {
@@ -77,38 +78,29 @@ def fetch_prometheus_metrics(query, days):
         return []
 
 
-def detect_anomalies_with_prophet(dfs, sensitivity, deviation_threshold, excess_deviation_threshold, is_k8s=False):
+def detect_anomalies_with_prophet(dfs, deviation_threshold, excess_deviation_threshold, is_k8s=False):
     anomalies_list = []
     for df in dfs:
         df = df[df['y'] >= 0]
         if len(df) < 2:
             logging.info("Insufficient data to fit model.")
             continue
-        m = Prophet(changepoint_prior_scale=sensitivity, yearly_seasonality=False, weekly_seasonality=True, daily_seasonality=is_k8s)
+        cp_scale = 0.05 if not is_k8s else 0.15  # Adjust sensitivity based on the type of metric
+        m = Prophet(changepoint_prior_scale=cp_scale, yearly_seasonality=False, weekly_seasonality=True, daily_seasonality=is_k8s)
         m.fit(df[['ds', 'y']])
         future = m.make_future_dataframe(periods=24, freq='h')
         forecast = m.predict(future)
         forecast['fact'] = df['y'].reset_index(drop=True)
 
-        if 'partner' not in df.columns and not is_k8s:
-            df['partner'] = 'unknown'
+        forecast = forecast.join(df[['partner', 'path']], how='left')
 
-        forecast = forecast.join(df[['partner', 'path']] if 'partner' in df.columns else df[['path']], how='left')
-
-        if 'partner' in df.columns:
-            grouped = forecast.groupby(['partner', 'path'])
-        else:
-            grouped = forecast.groupby(['path'])
+        grouped = forecast.groupby(['partner', 'path'])
 
         for name, group in grouped:
             group['lower_bound'] = group['yhat'] - (group['yhat'] * deviation_threshold)
             group['upper_bound'] = group['yhat'] + (group['yhat'] * deviation_threshold)
             group['excessive_deviation'] = group['fact'] > (group['upper_bound'] + (group['upper_bound'] * excess_deviation_threshold))
-            if is_k8s:
-                group['spike_deviation'] = group['fact'] > (group['yhat'] + (group['yhat'] * K8S_SPIKE_THRESHOLD))
-                group['anomaly'] = (group['spike_deviation'] | group['excessive_deviation'])
-            else:
-                group['anomaly'] = (group['fact'] < group['lower_bound']) | (group['fact'] > group['upper_bound'])
+            group['anomaly'] = (group['fact'] < group['lower_bound']) | (group['fact'] > group['upper_bound']) | group['excessive_deviation']
 
             anomalies = group[group['anomaly']]
             if not anomalies.empty:
@@ -122,43 +114,43 @@ def visualize_trends(anomalies_list, img_directory_name):
         if isinstance(anomaly_info, tuple) and isinstance(anomaly_info[0], pd.DataFrame):
             anomalies, group_keys = anomaly_info
             plt.figure(figsize=(10, 6))
-
-            if isinstance(group_keys, tuple):
-                partner, path = group_keys
-                sanitized_partner = sanitize_filename(partner)
-                sanitized_path = sanitize_filename(path)
-                title = f"Trend and Anomalies for {sanitized_partner} Path: {sanitized_path}"
-                filename = f"{img_directory_name}/trend_{sanitized_partner}_{sanitized_path}.png"
-            else:
-                path = group_keys
-                sanitized_path = sanitize_filename(path)
-                title = f"Trend and Anomalies for Path: {sanitized_path}"
-                filename = f"{img_directory_name}/trend_{sanitized_path}.png"
-
+            partner, path = group_keys
+            sanitized_partner = sanitize_filename(partner)
+            sanitized_path = sanitize_filename(path)
+            title = f"Trend and Anomalies for {sanitized_partner} Path: {sanitized_path}"
+            filename = f"{img_directory_name}/trend_{sanitized_partner}_{sanitized_path}.png"
             plt.title(title)
 
-            conditions = anomalies['excessive_deviation'].apply(lambda x: 'Excessive' if x else 'Normal')
-            palette = {cond: ('red' if cond == 'Excessive' else 'grey') for cond in conditions.unique()}
+            # Setting date format on x-axis
+            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+            plt.gca().xaxis.set_major_locator(mdates.DayLocator())
 
+            # Plotting the trend and expected range
             sns.lineplot(x=anomalies['ds'], y=anomalies['yhat'], label='Trend', color='blue')
             plt.fill_between(anomalies['ds'], anomalies['lower_bound'], anomalies['upper_bound'], color='green', alpha=0.3, label='Expected Range')
-            sns.scatterplot(x=anomalies['ds'], y=anomalies['fact'], hue=conditions, palette=palette, legend='full', marker='o')
+
+            # Highlighting anomalies
+            normal_points = anomalies[~anomalies['excessive_deviation']]
+            excessive_points = anomalies[anomalies['excessive_deviation']]
+            sns.scatterplot(x=normal_points['ds'], y=normal_points['fact'], color='grey', marker='o', s=50, label='Normal')
+            sns.scatterplot(x=excessive_points['ds'], y=excessive_points['fact'], color='red', marker='X', s=100, label='Excessive')
 
             plt.xlabel('Date')
             plt.ylabel('Metric Value')
             plt.legend(title='Point Type')
 
+            plt.grid(True)
+            plt.xticks(rotation=45)
+            plt.tight_layout()
             plt.savefig(filename)
             plt.close()
-        else:
-            logging.error("Expected a tuple with a DataFrame, but got a different type. Check data handling.")
 
 
 def main():
     logging.basicConfig(level=logging.INFO)
     queries = {
         'Nginx Requests Per Minute - 2xx/3xx': 'sum by (path, partner) (increase(service_nginx_request_time_s_count{path!="", partner!=""}[1m]))',
-        'Kubernetes Running Pods': 'sum by (phase, kubernetes_node, pod) (increase(kube_pod_status_phase{phase="Running", kubernetes_node!="", pod=~"kphoenix.*"}[1m]))'
+        'Kubernetes Running Pods - Phoenix': 'sum by (phase, kubernetes_node, pod) (increase(kube_pod_status_phase{phase="Running", kubernetes_node!="", pod=~"kphoenix.*"}[1m]))'
     }
     for metric_name, query in queries.items():
         csv_dir, img_dir = setup_directories(metric_name)
@@ -167,7 +159,7 @@ def main():
             logging.info("No data frames returned for query: %s", metric_name)
             continue
         is_k8s = "Kubernetes" in metric_name
-        anomalies_list = detect_anomalies_with_prophet(dfs, 0.1, DEVIATION_THRESHOLD, EXCESS_DEVIATION_THRESHOLD, is_k8s=is_k8s)
+        anomalies_list = detect_anomalies_with_prophet(dfs, DEVIATION_THRESHOLD, EXCESS_DEVIATION_THRESHOLD, is_k8s=is_k8s)
         if anomalies_list:
             visualize_trends(anomalies_list, img_dir)
             if CSV_OUTPUT:
