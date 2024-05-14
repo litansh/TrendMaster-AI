@@ -1,16 +1,17 @@
 import requests
-import openai
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import seaborn as sns
 from prophet import Prophet
 from datetime import datetime, timedelta
 import yaml
-from datetime import datetime
 import os
 import shutil
+import openai
+import logging
+import hashlib
 
-current_date = datetime.now()
-date_str = current_date.strftime('%Y-%m-%d')
-directory_name = f"script_csv_outputs/{date_str}"
 
 with open("../config/config.yaml", "r") as yamlfile:
     cfg = yaml.safe_load(yamlfile)
@@ -20,143 +21,151 @@ OPENAI_API_KEY = cfg['OPENAI_API_KEY']
 GRAFANA_DASHBOARD_URL = cfg['GRAFANA_DASHBOARD_URL']
 DAYS_TO_INSPECT = cfg.get('DAYS_TO_INSPECT', 7)
 DEVIATION_THRESHOLD = cfg.get('DEVIATION_THRESHOLD', 0.2)
+K8S_SPIKE_THRESHOLD = cfg.get('K8S_SPIKE_THRESHOLD', 0.5)
 EXCESS_DEVIATION_THRESHOLD = cfg.get('EXCESS_DEVIATION_THRESHOLD', 0.1)
 CSV_OUTPUT = cfg.get('CSV_OUTPUT', False)
+IMG_OUTPUT = cfg.get('IMG_OUTPUT', False)
 GPT_ON = cfg.get('GPT_ON', False)
 DOCKER = cfg.get('DOCKER', False)
 
+current_date = datetime.now()
+date_str = current_date.strftime('%Y-%m-%d')
+base_directory_name = f"outputs/{date_str}"
+
+
+def sanitize_filename(s):
+    s = str(s)
+    hash_suffix = hashlib.md5(s.encode('utf-8')).hexdigest()[:8]
+    s = s.replace('/', '_').replace('\\', '_').replace(':', '_').replace('\n', '_').replace(' ', '_')
+    return s[:50] + '_' + hash_suffix
+
+
+def setup_directories(metric_name):
+    csv_dir = f"{base_directory_name}/csv_outputs/{sanitize_filename(metric_name)}"
+    img_dir = f"{base_directory_name}/img_outputs/{sanitize_filename(metric_name)}"
+    os.makedirs(csv_dir, exist_ok=True)
+    os.makedirs(img_dir, exist_ok=True)
+    return csv_dir, img_dir
+
+
 openai.api_key = OPENAI_API_KEY
 
-def print_hyperlink_with_fallback(url, text):
-    return f'\033]8;;{url}\033\\{text}\033]8;;\033\\ \n(Fallback URL: {url})'
 
-def fetch_prometheus_metrics(query, days=7):
+def fetch_prometheus_metrics(query, days):
     end = datetime.now()
     start = end - timedelta(days=days)
-    step = '1h'
     params = {
         'query': query,
         'start': start.timestamp(),
         'end': end.timestamp(),
-        'step': step
+        'step': '1h'
     }
-    try:
-        response = requests.get(f'{PROMETHEUS_URL}/api/v1/query_range', params=params)
-        response.raise_for_status()
-        results = response.json()['data']['result']
-        dfs = []
+    response = requests.get(f'{PROMETHEUS_URL}/api/v1/query_range', params=params)
+    if response.status_code == 200:
+        results = response.json().get('data', {}).get('result', [])
+        dataframes = []
         for result in results:
-            values = result['values']
-            partner = result['metric'].get('partner', 'unknown')
-            df = pd.DataFrame(values, columns=['ds', 'y'])
+            df = pd.DataFrame(result['values'], columns=['ds', 'y'])
             df['ds'] = pd.to_datetime(df['ds'], unit='s')
-            df['y'] = pd.to_numeric(df['y'])
-            df['partner'] = partner
-            dfs.append(df)
-        return dfs
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching metrics from Prometheus: {e}")
+            df['y'] = pd.to_numeric(df['y'], errors='coerce')
+            if 'metric' in result:
+                for key in ['partner', 'path', 'pod']:
+                    df[key] = result['metric'].get(key, 'unknown')
+            dataframes.append(df)
+        return dataframes
+    else:
+        logging.error("Failed to fetch metrics: %s %s", response.status_code, response.text)
         return []
 
-def detect_anomalies_with_prophet(dfs, sensitivity=0.05, deviation_threshold=0.2, excess_deviation_threshold=0.1):
+
+def detect_anomalies_with_prophet(dfs, deviation_threshold, excess_deviation_threshold, is_k8s=False):
     anomalies_list = []
     for df in dfs:
-        df = df[df['y'] >= 0]  # Ensure non-negative 'y' values
-        m = Prophet(changepoint_prior_scale=sensitivity)
-        if df.dropna().shape[0] < 2:
-            print(f"{current_date} ERROR: Prophet fit equals {df.dropna().shape[0]}. Insufficient data to fit model.")
-            continue  # Skip to the next DataFrame
+        df = df[df['y'] >= 0]
+        if len(df) < 2:
+            logging.info("Insufficient data to fit model.")
+            continue
+        cp_scale = 0.05 if not is_k8s else 0.15
+        m = Prophet(changepoint_prior_scale=cp_scale, yearly_seasonality=False, weekly_seasonality=True, daily_seasonality=is_k8s)
         m.fit(df[['ds', 'y']])
         future = m.make_future_dataframe(periods=24, freq='h')
         forecast = m.predict(future)
         forecast['fact'] = df['y'].reset_index(drop=True)
-        forecast['partner'] = df['partner'].iloc[0]
-        
-        forecast['lower_bound'] = forecast['yhat'] * (1 - deviation_threshold)
-        forecast['upper_bound'] = forecast['yhat'] * (1 + deviation_threshold)
-        forecast['excessive_deviation'] = forecast['fact'] > forecast['upper_bound'] * (1 + excess_deviation_threshold)
-        forecast['anomaly'] = ((forecast['fact'] < forecast['lower_bound']) | (forecast['fact'] > forecast['upper_bound'])) & (forecast['fact'] >= 0)
-        
-        anomalies = forecast[forecast['anomaly'] | forecast['excessive_deviation']]
-        if not anomalies.empty:
-            anomalies_list.append(anomalies[['ds', 'fact', 'yhat', 'lower_bound', 'upper_bound', 'partner', 'excessive_deviation']])
-    
+
+        forecast = forecast.join(df[['partner', 'path']], how='left')
+
+        grouped = forecast.groupby(['partner', 'path'])
+
+        for name, group in grouped:
+            group['lower_bound'] = group['yhat'] - (group['yhat'] * deviation_threshold)
+            group['upper_bound'] = group['yhat'] + (group['yhat'] * deviation_threshold)
+            group['excessive_deviation'] = group['fact'] > (group['upper_bound'] + (group['upper_bound'] * excess_deviation_threshold))
+            group['anomaly'] = (group['fact'] < group['lower_bound']) | (group['fact'] > group['upper_bound']) | group['excessive_deviation']
+
+            anomalies = group[group['anomaly']]
+            if not anomalies.empty:
+                anomalies_list.append((anomalies, name))
+
     return anomalies_list
 
 
-def generate_grafana_link(metric_name, partner):
-    dashboard_ids = {
-        'Nginx Requests Per Minute - 2xx/3xx': 'DkA689pGh/nginx?orgId=1&viewPanel=225&var-env=orp2&var-partner=All&var-api=All&var-tvpapi=All&var-clientTag=All'
-    }
-    dashboard_id = dashboard_ids.get(metric_name, 'default')
-    grafana_link = print_hyperlink_with_fallback(f"{GRAFANA_DASHBOARD_URL}/{dashboard_id}&var-partner={partner}", f"Click here to visit '{metric_name}' for partner {partner}")
-    return grafana_link
+def visualize_trends(anomalies_list, img_directory_name):
+    for anomaly_info in anomalies_list:
+        if isinstance(anomaly_info, tuple) and isinstance(anomaly_info[0], pd.DataFrame):
+            anomalies, group_keys = anomaly_info
+            plt.figure(figsize=(10, 6))
+            partner, path = group_keys
+            sanitized_partner = sanitize_filename(partner)
+            sanitized_path = sanitize_filename(path)
+            title = f"Trend and Anomalies for {sanitized_partner} Path: {sanitized_path}"
+            filename = f"{img_directory_name}/trend_{sanitized_partner}_{sanitized_path}.png"
+            plt.title(title)
 
-def analyze_metrics_with_chatgpt(anomalies, metric_name):
-    try:
-        prompt_messages = [
-            {"role": "system", "content": f"Analyze the following anomalies for {metric_name} and provide insights."},
-            {"role": "user", "content": anomalies.to_string()}
-        ]
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=prompt_messages
-        )
-        return response['choices'][0]['message']['content']
-    except Exception as e:
-        print(f"Error analyzing anomalies with ChatGPT for {metric_name}: {e}")
-        return None
+            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+            plt.gca().xaxis.set_major_locator(mdates.DayLocator())
+
+            sns.lineplot(x=anomalies['ds'], y=anomalies['yhat'], label='Trend', color='blue')
+            plt.fill_between(anomalies['ds'], anomalies['lower_bound'], anomalies['upper_bound'], color='green', alpha=0.3, label='Expected Range')
+
+            normal_points = anomalies[~anomalies['excessive_deviation']]
+            excessive_points = anomalies[anomalies['excessive_deviation']]
+            sns.scatterplot(x=normal_points['ds'], y=normal_points['fact'], color='grey', marker='o', s=50, label='Normal')
+            sns.scatterplot(x=excessive_points['ds'], y=excessive_points['fact'], color='red', marker='X', s=100, label='Excessive')
+
+            plt.xlabel('Date')
+            plt.ylabel('Metric Value')
+            plt.legend(title='Point Type')
+
+            plt.grid(True)
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            plt.savefig(filename)
+            plt.close()
+
 
 def main():
-    metrics_queries = {
-        'Nginx Requests Per Minute - 2xx/3xx': 'sum by (partner) (increase(service_nginx_request_time_s_count{path!="", partner!=""}[1m]))'
+    logging.basicConfig(level=logging.INFO)
+    queries = {
+        'Nginx Requests Per Minute - 2xx/3xx': 'sum by (path, partner) (increase(service_nginx_request_time_s_count{path!="", partner!=""}[1m]))',
+        'Kubernetes Running Pods - Phoenix': 'sum by (phase, kubernetes_node, pod) (increase(kube_pod_status_phase{phase="Running", kubernetes_node!="", pod=~"kphoenix.*"}[1m]))'
     }
-
-    if CSV_OUTPUT:
-        if os.path.isdir(date_str):
-            shutil.rmtree(date_str)
-        os.makedirs(directory_name, exist_ok=True)
-        
-    for metric_name, query in metrics_queries.items():
-        print(f"Analyzing {metric_name}...")
-        dfs = fetch_prometheus_metrics(query, days=DAYS_TO_INSPECT)
-        
-        if dfs:
-            anomalies_list = detect_anomalies_with_prophet(dfs, sensitivity=0.1, deviation_threshold=DEVIATION_THRESHOLD, excess_deviation_threshold=EXCESS_DEVIATION_THRESHOLD)
-            for anomalies in anomalies_list:
-                if not anomalies.empty:
-                    # Filter out rows where 'yhat', 'lower_bound', or 'upper_bound' are below 0
-                    anomalies = anomalies[(anomalies['yhat'] >= 0) & (anomalies['lower_bound'] >= 0) & (anomalies['upper_bound'] >= 0)]
-                    
-                    partner = anomalies['partner'].iloc[0]
-                    print(f"Anomalies detected by Prophet for {metric_name} (Partner: {partner}):", anomalies)
-                    grafana_link = generate_grafana_link(metric_name, partner)
-                    print(grafana_link)
-
-                    if GPT_ON:
-                        analysis_result = analyze_metrics_with_chatgpt(anomalies, metric_name)
-                        if analysis_result:
-                            print(f"Analysis result from ChatGPT for {metric_name} (Partner: {partner}):", analysis_result)
-                        else:
-                            print(f"Failed to analyze anomalies with ChatGPT for {metric_name} (Partner: {partner}).")
-                    
-                    safe_metric_name = metric_name.replace("/", "_").replace(" ", "_")
-
-                    if DOCKER:
-                        filename = f"/data/{date_str}/anomalies_{safe_metric_name}_partner_{partner}.csv"
-                    else:
-                        filename = f"script_csv_outputs/{date_str}/anomalies_{safe_metric_name}_partner_{partner}.csv"
-
-                    if not anomalies.empty:
-                        if CSV_OUTPUT:
-                            anomalies.to_csv(filename, index=False)
-                        print(f"Anomalies for {metric_name} (Partner: {partner})")
-                    else:
-                        print(f"No non-negative anomalies detected by Prophet for {metric_name} (Partner: {partner}).")
-                else:
-                    print(f"No anomalies detected by Prophet for {metric_name}.")
+    for metric_name, query in queries.items():
+        csv_dir, img_dir = setup_directories(metric_name)
+        dfs = fetch_prometheus_metrics(query, DAYS_TO_INSPECT)
+        if not dfs:
+            logging.info("No data frames returned for query: %s", metric_name)
+            continue
+        is_k8s = "Kubernetes" in metric_name
+        anomalies_list = detect_anomalies_with_prophet(dfs, DEVIATION_THRESHOLD, EXCESS_DEVIATION_THRESHOLD, is_k8s=is_k8s)
+        if anomalies_list:
+            visualize_trends(anomalies_list, img_dir)
+            if CSV_OUTPUT:
+                for anomalies, _, _ in anomalies_list:
+                    filename = f"{csv_dir}/anomalies_{sanitize_filename(metric_name)}.csv"
+                    anomalies.to_csv(filename, index=False)
         else:
-            print(f"Failed to fetch metrics or no data available for {metric_name}.")
+            logging.info("No anomalies detected for %s", metric_name)
+
 
 if __name__ == "__main__":
     main()
