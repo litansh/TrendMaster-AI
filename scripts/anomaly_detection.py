@@ -11,11 +11,9 @@ import openai
 import logging
 import hashlib
 
-# Load configuration
 with open("../config/config.yaml", "r") as yamlfile:
     cfg = yaml.safe_load(yamlfile)
 
-# Configurations
 PROMETHEUS_URL = cfg['PROMETHEUS_URL']
 OPENAI_API_KEY = cfg['OPENAI_API_KEY']
 GRAFANA_DASHBOARD_URL = cfg['GRAFANA_DASHBOARD_URL']
@@ -82,7 +80,7 @@ def fetch_prometheus_metrics(query, days):
 def detect_anomalies_with_prophet(dfs, sensitivity, deviation_threshold, excess_deviation_threshold, is_k8s=False):
     anomalies_list = []
     for df in dfs:
-        df = df[df['y'] >= 0]  # Ensure data is non-negative
+        df = df[df['y'] >= 0]
         if len(df) < 2:
             logging.info("Insufficient data to fit model.")
             continue
@@ -92,19 +90,16 @@ def detect_anomalies_with_prophet(dfs, sensitivity, deviation_threshold, excess_
         forecast = m.predict(future)
         forecast['fact'] = df['y'].reset_index(drop=True)
 
-        # Handle 'partner' field based on context
         if 'partner' not in df.columns and not is_k8s:
-            df['partner'] = 'unknown'  # Set a default value if column is expected and not present
+            df['partner'] = 'unknown'
 
         forecast = forecast.join(df[['partner', 'path']] if 'partner' in df.columns else df[['path']], how='left')
 
-        # Grouping by relevant fields
         if 'partner' in df.columns:
             grouped = forecast.groupby(['partner', 'path'])
         else:
-            grouped = forecast.groupby(['path'])  # Assuming 'path' or another identifier is always available
+            grouped = forecast.groupby(['path'])
 
-        # Identifying anomalies based on thresholds
         for name, group in grouped:
             group['lower_bound'] = group['yhat'] - (group['yhat'] * deviation_threshold)
             group['upper_bound'] = group['yhat'] + (group['yhat'] * deviation_threshold)
@@ -117,7 +112,7 @@ def detect_anomalies_with_prophet(dfs, sensitivity, deviation_threshold, excess_
 
             anomalies = group[group['anomaly']]
             if not anomalies.empty:
-                anomalies_list.append((anomalies, name))  # name is a tuple (partner, path) or just path depending on grouping
+                anomalies_list.append((anomalies, name))
 
     return anomalies_list
 
@@ -128,7 +123,6 @@ def visualize_trends(anomalies_list, img_directory_name):
             anomalies, group_keys = anomaly_info
             plt.figure(figsize=(10, 6))
 
-            # Handling cases where group_keys can be a tuple or a single value based on the presence of 'partner'
             if isinstance(group_keys, tuple):
                 partner, path = group_keys
                 sanitized_partner = sanitize_filename(partner)
