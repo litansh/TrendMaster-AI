@@ -29,12 +29,19 @@ GRAFANA_DASHBOARD_URL: 'https://XXXXXX'
 DAYS_TO_INSPECT: 7
 DEVIATION_THRESHOLD: 0.5
 EXCESS_DEVIATION_THRESHOLD: 1
-CSV_OUTPUT: True
-DOCKER: False # DOCKER should be set to false for testing the script without dockerizing the script
+K8S_SPIKE_THRESHOLD: 0.1
+CSV_OUTPUT: False
+IMG_OUTPUT: True
+DOCKER: False
 
 # To enable GPT analysis
 GPT_ON: False
 OPENAI_API_KEY: 'XXXXXXX'
+
+# Required
+QUERIES:
+  'XXXXXXX'
+  'XXXXXXX'
 ```
 
 - Navigate to the `/scripts/` directory
