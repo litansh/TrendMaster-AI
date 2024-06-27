@@ -220,6 +220,7 @@ if __name__ == "__main__":
 
 
 #
+# Check that the script is parsing as it should - see all partners and apis
 # Check the formula
 # Add cache ratio to the formula
 # Fix dates of max
