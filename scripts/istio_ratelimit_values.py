@@ -101,7 +101,7 @@ def calculate_rate_limit(row):
     
     if recommended_rate == 0:
         logging.debug(f"Recommended rate limit is 0, setting to 100 for manual intervention: Partner: {row['partner']}, Path: {row['path']}")
-        recommended_rate = 100  # Avoid setting rate limit to 0
+        recommended_rate = 100
     
     return recommended_rate
 
@@ -140,7 +140,7 @@ def compare_with_config(stats, rate_limits):
             recommended_rate_limit = math.ceil(row['max'] * 1.2)
         recommended_rate_limit = round(recommended_rate_limit, -2)
         if recommended_rate_limit == 0:
-            recommended_rate_limit = 100  # Avoid setting rate limit to 0
+            recommended_rate_limit = 100
 
         results.append({
             'partner': partner,
@@ -217,3 +217,14 @@ if __name__ == "__main__":
     print("Executing main function...")
     main()
     print("Main function execution complete.")
+
+
+#
+# Check the formula
+# Add cache ratio to the formula
+# Fix dates of max
+# Think of exclusions api/partner
+# Arrange the code
+# Update the CM
+# Deploy it as an operator
+#
