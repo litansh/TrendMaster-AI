@@ -12,7 +12,7 @@ import hashlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import openai
 
-with open("../config/config.yaml", "r") as yamlfile:
+with open("../config/anomaly_detection_config.yaml", "r") as yamlfile:
     cfg = yaml.safe_load(yamlfile)
 
 PROMETHEUS_URL = cfg['PROMETHEUS_URL']

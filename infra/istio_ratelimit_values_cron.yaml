@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: update-rate-limits
+spec:
+  template:
+    spec:
+      containers:
+      - name: update-rate-limits
+        image: XXXe:latest
+        env:
+        - name: PROMETHEUS_URL
+          value: "https://trickster.orp2.ott.kaltura.com"
+        - name: GITHUB_REPO_URL
+          value: "XXX"
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-token-secret
+              key: token
+        - name: GITHUB_REPO_PATH
+          value: "/app/repo"
+        - name: CONFIGMAP_NAME
+          value: "ratelimit-config"
+        - name: NAMESPACE
+          value: "istio-system"
+        - name: DAYS_TO_INSPECT
+          value: "30"
+        - name: LOG_LEVEL
+          value: "INFO"
+        volumeMounts:
+        - name: repo-volume
+          mountPath: /app/repo
+      restartPolicy: Never
+      volumes:
+      - name: repo-volume
+        emptyDir: {}
+  backoffLimit: 4

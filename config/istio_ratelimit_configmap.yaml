@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rate-limit-values-config
+  namespace: istio-system
+data:
+  config.yaml: |
+    PROMETHEUS_URL: "https://trickster.orp2.ott.kaltura.com"
+    GITHUB_REPO_URL: "XXX"
+    GITHUB_TOKEN: "XXX"
+    GITHUB_REPO_PATH: "/app/repo"
+    CONFIGMAP_NAME: "ratelimit-config"
+    CONFIGMAP_NAMESPACE: "istio-system"
+    DAYS_TO_INSPECT: 7
+    LOG_LEVEL: "INFO"
+    SHOW_ONLY_CONFIGURED: True
