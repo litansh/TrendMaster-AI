@@ -75,7 +75,13 @@ def process_metrics(results):
             logging.debug(f"Processed DataFrame: {df.head()}")
         except Exception as e:
             logging.error(f"Error processing metrics: {e}")
-    return pd.concat(data, ignore_index=True) if data else pd.DataFrame()
+    if data:
+        combined_df = pd.concat(data, ignore_index=True)
+        logging.debug(f"Combined DataFrame: {combined_df.head()}")
+        return combined_df
+    else:
+        logging.warning("No data processed from metrics results")
+        return pd.DataFrame()
 
 def calculate_statistics(df):
     logging.debug("Calculating statistics...")
@@ -127,6 +133,7 @@ def compare_with_config(stats, rate_limits):
         path = row['path']
         recommended_rate_limit = row['rate_limit']
         current_rate_limit = rate_limits.get((partner, path))
+        logging.debug(f"Processing comparison for Partner {partner}, Path {path}, Recommended Rate Limit {recommended_rate_limit}, Current Rate Limit {current_rate_limit}")
         if current_rate_limit is not None:
             deviation = ((recommended_rate_limit - current_rate_limit) / current_rate_limit) * 100
         else:
@@ -194,19 +201,19 @@ def main():
             rate_limits = load_rate_limit_config()
             comparison_results = compare_with_config(stats, rate_limits)
             for result in comparison_results:
+                logging.debug(f"Comparison result for Partner {result['partner']} and Path {result['path']}")
                 if SHOW_ONLY_CONFIGURED and result['current_rate_limit'] is None:
                     continue
-                if result['current_rate_limit'] is not None:
-                    deviation_display = f"{result['deviation']:.2f}%" if result['deviation'] is not None else "N/A"
-                    anomaly_dates_display = ', '.join([date.strftime('%Y-%m-%d %H:%M:%S') for date in result['max_dates']])
-                    comment = "Needs manual intervention" if result['recommended_rate_limit'] == 100 else ""
-                    logging.info(f"Partner: {result['partner']}, API Path: {result['path']}, "
-                                 f"Current Rate Limit: {result['current_rate_limit']}, "
-                                 f"Recommended Rate Limit: {result['recommended_rate_limit']} {comment}, "
-                                 f"Deviation: {deviation_display}, "
-                                 f"In Config: {result['in_config']}, "
-                                 f"Excessive Deviation: {result['excessive_deviation']}, "
-                                 f"Anomaly for Max: {result['anomaly_for_max']} (Dates: {anomaly_dates_display})")
+                deviation_display = f"{result['deviation']:.2f}%" if result['deviation'] is not None else "N/A"
+                anomaly_dates_display = ', '.join([date.strftime('%Y-%m-%d %H:%M:%S') for date in result['max_dates']])
+                comment = "Needs manual intervention" if result['recommended_rate_limit'] == 100 else ""
+                logging.info(f"Partner: {result['partner']}, API Path: {result['path']}, "
+                             f"Current Rate Limit: {result['current_rate_limit']}, "
+                             f"Recommended Rate Limit: {result['recommended_rate_limit']} {comment}, "
+                             f"Deviation: {deviation_display}, "
+                             f"In Config: {result['in_config']}, "
+                             f"Excessive Deviation: {result['excessive_deviation']}, "
+                             f"Anomaly for Max: {result['anomaly_for_max']} (Dates: {anomaly_dates_display})")
             update_config_map(comparison_results)
         else:
             logging.info("No data available to process.")
@@ -217,10 +224,24 @@ if __name__ == "__main__":
     print("Executing main function...")
     main()
     print("Main function execution complete.")
+    import logging
 
+def print_file_contents(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            content = file.read()
+            logging.info(f"Contents of {file_path}:\n{content}")
+    except FileNotFoundError:
+        logging.error(f"File not found: {file_path}")
+    except Exception as e:
+        logging.error(f"Error reading file {file_path}: {e}")
+
+file_path = "/etc/config/output_istio_cm.yaml"
+print_file_contents(file_path)
 
 #
 # Check that the script is parsing as it should - see all partners and apis
+# Get the configmap from the env
 # Check the formula
 # Add cache ratio to the formula
 # Fix dates of max
