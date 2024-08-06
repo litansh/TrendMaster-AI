@@ -105,10 +105,6 @@ def calculate_rate_limit(row):
     
     logging.debug(f"Calculated rate limit: {recommended_rate} for Partner: {row['partner']}, Path: {row['path']}, Max: {row['max']}, Mean: {row['mean']}")
     
-    if recommended_rate == 0:
-        logging.debug(f"Recommended rate limit is 0, setting to 100 for manual intervention: Partner: {row['partner']}, Path: {row['path']}")
-        recommended_rate = 100
-    
     return recommended_rate
 
 def load_rate_limit_config():
@@ -146,8 +142,6 @@ def compare_with_config(stats, rate_limits):
         if anomaly_for_max:
             recommended_rate_limit = math.ceil(row['max'] * 1.2)
         recommended_rate_limit = round(recommended_rate_limit, -2)
-        if recommended_rate_limit == 0:
-            recommended_rate_limit = 100
 
         results.append({
             'partner': partner,
@@ -168,6 +162,9 @@ def compare_with_config(stats, rate_limits):
 def update_config_map(comparison_results):
     new_descriptors = []
     for result in comparison_results:
+        if result['recommended_rate_limit'] == 0 or result['recommended_rate_limit'] == 100:
+            logging.debug(f"Skipping block for Partner {result['partner']} and Path {result['path']} with recommended rate limit of {result['recommended_rate_limit']}")
+            continue
         if not result['in_config']:
             new_descriptors.append({
                 'key': 'PARTNER',
@@ -206,10 +203,9 @@ def main():
                     continue
                 deviation_display = f"{result['deviation']:.2f}%" if result['deviation'] is not None else "N/A"
                 anomaly_dates_display = ', '.join([date.strftime('%Y-%m-%d %H:%M:%S') for date in result['max_dates']])
-                comment = "Needs manual intervention" if result['recommended_rate_limit'] == 100 else ""
                 logging.info(f"Partner: {result['partner']}, API Path: {result['path']}, "
                              f"Current Rate Limit: {result['current_rate_limit']}, "
-                             f"Recommended Rate Limit: {result['recommended_rate_limit']} {comment}, "
+                             f"Recommended Rate Limit: {result['recommended_rate_limit']}, "
                              f"Deviation: {deviation_display}, "
                              f"In Config: {result['in_config']}, "
                              f"Excessive Deviation: {result['excessive_deviation']}, "
@@ -224,7 +220,6 @@ if __name__ == "__main__":
     print("Executing main function...")
     main()
     print("Main function execution complete.")
-    import logging
 
 def print_file_contents(file_path):
     try:
