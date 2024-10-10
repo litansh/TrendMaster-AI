@@ -38,6 +38,7 @@ else:
 
 # Configuration variables
 PROMETHEUS_URL = cfg['PROMETHEUS_URL']
+ENV = cfg['ENV']
 QUERY = 'sum by (path, partner) (increase(service_nginx_request_time_s_count{path!="", partner!=""}[1m]))'
 DAYS_TO_INSPECT = cfg.get('DAYS_TO_INSPECT', 7)
 LOG_LEVEL = cfg.get('LOG_LEVEL', 'DEBUG').upper()
@@ -225,10 +226,10 @@ def update_config_map(comparison_results):
             "  name: ratelimit-config\n"
             "  namespace: istio-system\n"
             "  labels:\n"
-            "    app.kubernetes.io/instance: orp2-istio-ratelimit\n"
+            "    app.kubernetes.io/instance: {env}-istio-ratelimit\n"
             "data:\n"
             "  config.yaml: |\n"
-        )
+        ).format(env=ENV)
 
         # Add the properly indented YAML content
         config_map_content += "    " + config_yaml.replace("\n", "\n    ")
@@ -301,13 +302,15 @@ if __name__ == "__main__":
 
 
 #
-# Check that the script is parsing as it should - see all partners and apis
-# Get the configmap from the env
 # Check the formula
 # Add cache ratio to the formula
+# Get the configmap from the env
 # Fix dates of max
 # Think of exclusions api/partner
 # Arrange the code
 # Update the CM
 # Deploy it as an operator
+#
+# Done
+# Check that the script is parsing as it should - see all partners and apis
 #

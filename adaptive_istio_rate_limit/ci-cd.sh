@@ -36,7 +36,7 @@ retry() {
 }
 
 log_info "Building Docker image: $DOCKER_IMAGE"
-retry docker build -t "$DOCKER_IMAGE" -f Dockerfile-istio-ratelimit-values .
+retry docker build -t "$DOCKER_IMAGE" -f Dockerfile .
 
 log_info "Pushing Docker image: $DOCKER_IMAGE"
 retry docker push "$DOCKER_IMAGE"

@@ -6,6 +6,7 @@ metadata:
 data:
   config.yaml: |
     PROMETHEUS_URL: "https://trickster.orp2.ott.kaltura.com"
+    ENV: "orp2"
     GITHUB_REPO_URL: "XXX"
     GITHUB_TOKEN: "XXX"
     GITHUB_REPO_PATH: "/app/repo"
