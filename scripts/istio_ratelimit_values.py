@@ -11,6 +11,7 @@ print("Starting script...")
 CONFIG_FILE_PATH = os.getenv('CONFIG_FILE_PATH', '/etc/config/config.yaml')
 RATE_LIMIT_CONFIG_FILE_PATH = "/etc/config/example_istio_cm.yaml"
 OUTPUT_CONFIG_FILE_PATH = "/etc/config/output_istio_cm.yaml"
+DEVIATIONS_FILE_PATH = "/etc/config/deviations.yaml"
 
 if os.path.exists(CONFIG_FILE_PATH):
     print(f"Found config file at {CONFIG_FILE_PATH}")
@@ -122,11 +123,13 @@ def load_rate_limit_config():
             logging.debug(f"Loaded config: Partner {partner}, Path {path}, Rate Limit {rate_limit}")
     return rate_limits
 
-def compare_with_config(stats, rate_limits):
+def compare_with_config(stats, rate_limits, filter_partners_paths):
     results = []
     for _, row in stats.iterrows():
         partner = str(row['partner'])
         path = row['path']
+        if (partner, path) not in filter_partners_paths:
+            continue
         recommended_rate_limit = row['rate_limit']
         current_rate_limit = rate_limits.get((partner, path))
         logging.debug(f"Processing comparison for Partner {partner}, Path {path}, Recommended Rate Limit {recommended_rate_limit}, Current Rate Limit {current_rate_limit}")
@@ -160,32 +163,41 @@ def compare_with_config(stats, rate_limits):
     return results
 
 def update_config_map(comparison_results):
-    new_descriptors = []
-    for result in comparison_results:
-        if result['recommended_rate_limit'] == 0 or result['recommended_rate_limit'] == 100:
-            logging.debug(f"Skipping block for Partner {result['partner']} and Path {result['path']} with recommended rate limit of {result['recommended_rate_limit']}")
-            continue
-        if not result['in_config']:
-            new_descriptors.append({
-                'key': 'PARTNER',
-                'value': result['partner'],
-                'descriptors': [
-                    {
-                        'key': 'PATH',
-                        'value': result['path'],
-                        'rate_limit': {
-                            'unit': 'minute',
-                            'requests_per_unit': result['recommended_rate_limit']
-                        }
-                    }
-                ]
-            })
-    
-    if new_descriptors:
-        rate_limit_cfg['descriptors'].extend(new_descriptors)
+    deviations = []
+    for descriptor in rate_limit_cfg['descriptors']:
+        logging.info(f"rate_limit_cfgggggg: {rate_limit_cfg['descriptors']}")
+        partner = descriptor['value']
+        logging.info(f"partnerrrrrrrr: {partner}")
+        for path_descriptor in descriptor['descriptors']:
+            logging.info(f"path_descriptorrrrrrr: {path_descriptor}")
+            path = path_descriptor['value']
+            match = next((result for result in comparison_results if result['partner'] == partner and result['path'] == path), None)
+            logging.info(f"matchhhhhhhh: {match}")
+            if match:
+                logging.debug(f"Updating rate limit for Partner {partner}, Path {path} from {path_descriptor['rate_limit']['requests_per_unit']} to {match['recommended_rate_limit']}")
+                path_descriptor['rate_limit']['requests_per_unit'] = match['recommended_rate_limit']
+                deviation_info = {
+                    'partner': partner,
+                    'path': path,
+                    'current_rate_limit': match['current_rate_limit'],
+                    'recommended_rate_limit': match['recommended_rate_limit'],
+                    'deviation': match['deviation'],
+                    'max_dates': [date.strftime('%Y-%m-%d %H:%M:%S') for date in match['max_dates']]
+                }
+                deviations.append(deviation_info)
+                logging.debug(f"Appended deviation info: {deviation_info}")
+
+    try:
         with open(OUTPUT_CONFIG_FILE_PATH, 'w') as outfile:
-            yaml.dump(rate_limit_cfg, outfile, default_flow_style=False)
+            yaml.dump({'domain': 'global-ratelimit', 'descriptors': rate_limit_cfg['descriptors']}, outfile, default_flow_style=False)
         logging.info(f"Updated ConfigMap written to {OUTPUT_CONFIG_FILE_PATH}")
+
+        with open(DEVIATIONS_FILE_PATH, 'w') as devfile:
+            yaml.dump({'deviations': deviations}, devfile, default_flow_style=False)
+        logging.info(f"Deviations file written to {DEVIATIONS_FILE_PATH}")
+
+    except Exception as e:
+        logging.error(f"Failed to write updated ConfigMap or deviations file: {e}")
 
 def main():
     logging.info("Starting to fetch metrics...")
@@ -196,7 +208,16 @@ def main():
         if not metrics_df.empty:
             stats = calculate_statistics(metrics_df)
             rate_limits = load_rate_limit_config()
-            comparison_results = compare_with_config(stats, rate_limits)
+            
+            # Define the partners and paths to filter based on the example config
+            filter_partners_paths = set()
+            for descriptor in rate_limit_cfg['descriptors']:
+                partner = descriptor['value']
+                for path_descriptor in descriptor['descriptors']:
+                    path = path_descriptor['value']
+                    filter_partners_paths.add((str(partner), path))
+            
+            comparison_results = compare_with_config(stats, rate_limits, filter_partners_paths)
             for result in comparison_results:
                 logging.debug(f"Comparison result for Partner {result['partner']} and Path {result['path']}")
                 if SHOW_ONLY_CONFIGURED and result['current_rate_limit'] is None:
@@ -232,6 +253,9 @@ def print_file_contents(file_path):
         logging.error(f"Error reading file {file_path}: {e}")
 
 file_path = "/etc/config/output_istio_cm.yaml"
+print_file_contents(file_path)
+
+file_path = "/etc/config/deviations.yaml"
 print_file_contents(file_path)
 
 #

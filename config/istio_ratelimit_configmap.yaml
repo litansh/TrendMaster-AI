@@ -12,5 +12,5 @@ data:
     CONFIGMAP_NAME: "ratelimit-config"
     CONFIGMAP_NAMESPACE: "istio-system"
     DAYS_TO_INSPECT: 7
-    LOG_LEVEL: "INFO"
+    LOG_LEVEL: "DEBUG"
     SHOW_ONLY_CONFIGURED: True
