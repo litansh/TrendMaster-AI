@@ -186,6 +186,64 @@ class AdaptiveRateLimiter:
         
         return validation_result
     
+    def _get_partners_and_apis(self) -> tuple:
+        """Get partners and APIs from appropriate source based on environment"""
+        deployment_mode = self.config_manager.get_deployment_mode()
+        
+        if deployment_mode in ['production', 'testing']:
+            # Get from existing ConfigMap
+            return self._get_partners_apis_from_configmap()
+        else:
+            # Get from config.yaml (local development)
+            return self._get_partners_apis_from_config()
+    
+    def _get_partners_apis_from_configmap(self) -> tuple:
+        """Get partners and APIs from existing Istio ConfigMap"""
+        try:
+            # Fetch current ConfigMap from Kubernetes
+            configmap_name = self.config.get('COMMON', {}).get('CONFIGMAP_NAME', 'ratelimit-config')
+            current_configmap = self.configmap_manager.fetch_current_configmap(configmap_name)
+            
+            if current_configmap and 'parsed_config' in current_configmap:
+                partners, apis = self._extract_partners_apis_from_configmap(current_configmap['parsed_config'])
+                self.logger.info(f"Loaded from existing ConfigMap: {len(partners)} partners, {len(apis)} APIs")
+                return partners, apis
+            else:
+                self.logger.warning("No existing ConfigMap found, falling back to config.yaml")
+                return self._get_partners_apis_from_config()
+                
+        except Exception as e:
+            self.logger.error(f"Failed to fetch ConfigMap: {e}")
+            self.logger.warning("Falling back to config.yaml")
+            return self._get_partners_apis_from_config()
+    
+    def _get_partners_apis_from_config(self) -> tuple:
+        """Get partners and APIs from config.yaml"""
+        partner_config = self.config_manager.get_partner_config()
+        partners = partner_config.get('partners', [])
+        apis = partner_config.get('apis', [])
+        self.logger.info(f"Loaded from config.yaml: {len(partners)} partners, {len(apis)} APIs")
+        return partners, apis
+    
+    def _extract_partners_apis_from_configmap(self, configmap_config: Dict) -> tuple:
+        """Extract partners and APIs from ConfigMap structure"""
+        partners = set()
+        apis = set()
+        
+        descriptors = configmap_config.get('descriptors', [])
+        for partner_desc in descriptors:
+            partner = partner_desc.get('value', '')
+            if partner:
+                partners.add(partner)
+                
+                # Extract APIs from partner descriptors
+                for path_desc in partner_desc.get('descriptors', []):
+                    api_path = path_desc.get('value', '')
+                    if api_path:
+                        apis.add(api_path)
+        
+        return list(partners), list(apis)
+    
     def run(self, partners: Optional[List[str]] = None, apis: Optional[List[str]] = None) -> Dict[str, Any]:
         """
         Run the adaptive rate limiting analysis and configuration generation
@@ -199,12 +257,9 @@ class AdaptiveRateLimiter:
             if not validation_result['valid']:
                 raise RuntimeError("Environment validation failed")
             
-            # Get partners and APIs from configuration if not provided
-            partner_config = self.config_manager.get_partner_config()
-            if partners is None:
-                partners = partner_config.get('partners', [])
-            if apis is None:
-                apis = partner_config.get('apis', [])
+            # Get partners and APIs from appropriate source
+            if partners is None or apis is None:
+                partners, apis = self._get_partners_and_apis()
             
             self.logger.info(f"Processing {len(partners)} partners and {len(apis)} APIs")
             

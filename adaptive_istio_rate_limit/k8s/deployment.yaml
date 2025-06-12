@@ -1,0 +1,231 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trendmaster-ai-rate-limiter
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    component: rate-limiter
+    version: v3.0
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trendmaster-ai
+      component: rate-limiter
+  template:
+    metadata:
+      labels:
+        app: trendmaster-ai
+        component: rate-limiter
+        version: v3.0
+    spec:
+      serviceAccountName: trendmaster-ai-service-account
+      containers:
+      - name: trendmaster-ai
+        image: trendmaster-ai:v3.0
+        imagePullPolicy: Always
+        env:
+        # Environment Detection (Injected from EKS)
+        - name: ENVIRONMENT
+          value: "${ENVIRONMENT}"  # Injected: production/testing/local
+        - name: DEPLOYMENT_MODE
+          value: "${DEPLOYMENT_MODE}"  # Injected: production/testing/local
+        
+        # Prometheus Configuration (Injected from EKS)
+        - name: PROMETHEUS_URL
+          value: "${PROMETHEUS_URL}"  # Injected from EKS environment
+        - name: PROMETHEUS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: prometheus-credentials
+              key: token
+        
+        # Kubernetes Configuration (Injected from EKS)
+        - name: KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: KUBERNETES_CONTEXT
+          value: "${KUBERNETES_CONTEXT}"  # Injected from EKS
+        - name: CONFIGMAP_NAMESPACE
+          value: "${CONFIGMAP_NAMESPACE}"  # Injected from EKS
+        
+        # System Configuration (Injected from EKS)
+        - name: LOG_LEVEL
+          value: "${LOG_LEVEL}"  # Injected from EKS
+        - name: DRY_RUN
+          value: "${DRY_RUN}"  # Injected from EKS
+        
+        # AWS Configuration (Injected from EKS)
+        - name: AWS_REGION
+          value: "${AWS_REGION}"  # Injected from EKS
+        - name: EKS_CLUSTER_NAME
+          value: "${EKS_CLUSTER_NAME}"  # Injected from EKS
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        volumeMounts:
+        - name: output-volume
+          mountPath: /app/output
+        
+        livenessProbe:
+          exec:
+            command:
+            - python
+            - scripts/main.py
+            - --validate-only
+          initialDelaySeconds: 30
+          periodSeconds: 60
+        
+        readinessProbe:
+          exec:
+            command:
+            - python
+            - scripts/main.py
+            - --validate-only
+          initialDelaySeconds: 10
+          periodSeconds: 30
+
+      volumes:
+      - name: output-volume
+        emptyDir: {}
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: trendmaster-ai-cronjob
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    component: cronjob
+    version: v3.0
+spec:
+  schedule: "${CRONJOB_SCHEDULE}"  # Injected from EKS: */15 * * * *
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: trendmaster-ai
+            component: cronjob
+        spec:
+          serviceAccountName: trendmaster-ai-service-account
+          restartPolicy: OnFailure
+          containers:
+          - name: trendmaster-ai-cronjob
+            image: trendmaster-ai:v3.0
+            imagePullPolicy: Always
+            command:
+            - python
+            - scripts/main.py
+            - --output-format
+            - yaml
+            env:
+            # Environment Configuration (All Injected from EKS)
+            - name: ENVIRONMENT
+              value: "${ENVIRONMENT}"  # Injected from EKS
+            - name: DEPLOYMENT_MODE
+              value: "${DEPLOYMENT_MODE}"  # Injected from EKS
+            
+            # Prometheus Configuration (All Injected from EKS)
+            - name: PROMETHEUS_URL
+              value: "${PROMETHEUS_URL}"  # Injected from EKS
+            - name: PROMETHEUS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: prometheus-credentials
+                  key: token
+            
+            # Kubernetes Configuration (All Injected from EKS)
+            - name: KUBERNETES_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: CONFIGMAP_NAMESPACE
+              value: "${CONFIGMAP_NAMESPACE}"  # Injected from EKS
+            
+            # Execution Configuration (All Injected from EKS)
+            - name: LOG_LEVEL
+              value: "${LOG_LEVEL}"  # Injected from EKS
+            - name: DRY_RUN
+              value: "${DRY_RUN}"  # Injected from EKS
+            
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "500m"
+              limits:
+                memory: "1Gi"
+                cpu: "1000m"
+            
+            volumeMounts:
+            - name: output-volume
+              mountPath: /app/output
+
+          volumes:
+          - name: output-volume
+            emptyDir: {}
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: trendmaster-ai-service-account
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: trendmaster-ai-role
+  labels:
+    app: trendmaster-ai
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "create", "update", "patch"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: trendmaster-ai-binding
+  labels:
+    app: trendmaster-ai
+subjects:
+- kind: ServiceAccount
+  name: trendmaster-ai-service-account
+  namespace: istio-system
+roleRef:
+  kind: ClusterRole
+  name: trendmaster-ai-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Note: Secret should be created separately with actual values
+# kubectl create secret generic prometheus-credentials \
+#   --from-literal=token=${PROMETHEUS_TOKEN} \
+#   --namespace=istio-system
+apiVersion: v1
+kind: Secret
+metadata:
+  name: prometheus-credentials
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+type: Opaque
+data: {}
+# token will be added separately via kubectl command

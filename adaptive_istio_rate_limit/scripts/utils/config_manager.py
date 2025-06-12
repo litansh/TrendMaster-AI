@@ -50,21 +50,26 @@ class ConfigManager:
         """Initialize configuration manager"""
         self.logger = logging.getLogger(__name__)
         
-        # Determine config file path
+        # Determine config file paths
         if config_path is None:
             # Default to config/config.yaml relative to project root
             project_root = Path(__file__).parent.parent.parent
             config_path = project_root / "config" / "config.yaml"
         
         self.config_path = Path(config_path)
+        self.local_config_path = self.config_path.parent.parent / ".local.config.yaml"
         self.raw_config = {}
+        self.local_config = {}
         self.processed_config = {}
         
         # Load and process configuration
         self._load_config()
+        self._load_local_config()
         self._process_environment_config()
         
         self.logger.info(f"Configuration loaded from: {self.config_path}")
+        if self.local_config:
+            self.logger.info(f"Local configuration loaded from: {self.local_config_path}")
         self.logger.info(f"Current environment: {self.get_current_environment()}")
     
     def _load_config(self) -> None:
@@ -80,6 +85,23 @@ class ConfigManager:
             
         except Exception as e:
             self.logger.error(f"Failed to load configuration: {e}")
+            raise
+    
+    def _load_local_config(self) -> None:
+        """Load local configuration from hidden file"""
+        try:
+            if self.local_config_path.exists():
+                with open(self.local_config_path, 'r') as f:
+                    self.local_config = yaml.safe_load(f) or {}
+                self.logger.debug(f"Local configuration loaded from: {self.local_config_path}")
+            else:
+                self.logger.debug(f"Local configuration file not found: {self.local_config_path}")
+                self.local_config = {}
+        except yaml.YAMLError as e:
+            self.logger.error(f"Error parsing local YAML configuration: {e}")
+            raise
+        except Exception as e:
+            self.logger.error(f"Failed to load local configuration: {e}")
             raise
     
     def _process_environment_config(self) -> None:
@@ -312,7 +334,17 @@ class ConfigManager:
         return config
     
     def _get_local_partner_config(self) -> Dict[str, Any]:
-        """Get partner configuration for local development from config.yaml (orp2 defaults)"""
+        """Get partner configuration for local development from local config file"""
+        # First try to get from local config file (hidden file with sensitive data)
+        if self.local_config and 'PARTNER_CONFIGS' in self.local_config:
+            local_partner_configs = self.local_config['PARTNER_CONFIGS']
+            orp2_config = local_partner_configs.get('orp2', {})
+            if orp2_config:
+                orp2_config['source'] = 'local_config_yaml'
+                self.logger.info(f"Local development using .local.config.yaml: {len(orp2_config.get('partners', []))} partners, {len(orp2_config.get('apis', []))} APIs")
+                return orp2_config
+        
+        # Fallback to main config.yaml (sanitized version)
         partner_configs = self.processed_config.get('PARTNER_CONFIGS', {})
         orp2_config = partner_configs.get('orp2', {})
         orp2_config['source'] = 'config_yaml'
@@ -402,6 +434,7 @@ class ConfigManager:
         """Reload configuration from file"""
         self.logger.info("Reloading configuration...")
         self._load_config()
+        self._load_local_config()
         self._process_environment_config()
         self.logger.info("Configuration reloaded successfully")
     

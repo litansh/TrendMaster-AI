@@ -133,28 +133,61 @@ ENV=testing python scripts/main.py --partners 313
 ### Configuration Structure
 
 ```yaml
-# config/config.yaml
+# config/config.yaml (sanitized - no sensitive data)
+PARTNER_CONFIGS:
+  orp2:
+    partners: []  # Loaded from .local.config.yaml or ConfigMap
+    apis: []      # Loaded from .local.config.yaml or ConfigMap
+
+DEPLOYMENT_OVERRIDES:
+  local:
+    prometheus_url: "${PROMETHEUS_URL}"  # Environment variable
+    dry_run: true
+  production:
+    prometheus_url: "${PROMETHEUS_URL}"  # Environment variable
+    dry_run: false
+```
+
+### Secure Configuration Model
+
+The system uses a **security-first configuration approach** with sensitive data separation:
+
+#### Configuration Files
+- **`config/config.yaml`**: Sanitized main configuration (tracked in git)
+- **`.local.config.yaml`**: Hidden local configuration with sensitive data (NOT tracked in git)
+- **Environment Variables**: Override URLs and tokens
+- **Kubernetes ConfigMaps**: Production environments load from existing Istio ConfigMaps
+
+#### Security Features
+- ✅ **No Sensitive Data in Git**: Partner IDs, API paths, and URLs excluded from tracked files
+- ✅ **Hidden Local Config**: `.local.config.yaml` contains all sensitive configuration for local development
+- ✅ **Environment-Based Loading**: Production/testing loads from ConfigMaps, local uses hidden file
+- ✅ **Git Exclusion**: `.local.config.yaml` automatically excluded via `.gitignore`
+
+#### Local Development Setup
+```bash
+# 1. Copy the local configuration template
+cp .local.config.yaml.template .local.config.yaml
+
+# 2. Edit with your actual partner IDs and API paths
+vim .local.config.yaml
+
+# 3. Run with local configuration
+ENVIRONMENT=orp2 python scripts/main.py --show-env
+```
+
+#### Example `.local.config.yaml`
+```yaml
+# .local.config.yaml (NOT tracked in git)
 PARTNER_CONFIGS:
   orp2:
     partners: [313, 439, 3079, 9020]
     apis:
       - /api_v3/service/multirequest
       - /api_v3/service/asset/action/list
-      # ... 7 more APIs
-  production:
-    partners: [101, 201, 301, 401, 501]
-    apis:
-      - /api_v3/service/multirequest
-      - /api_v3/service/asset/action/list
-      # ... 9 more APIs
-
-DEPLOYMENT_OVERRIDES:
-  orp2:
+      - /api_v3/service/baseEntry/action/list
+      # ... actual API paths
     prometheus_url: "https://trickster.orp2.ott.kaltura.com"
-    dry_run: true
-  production:
-    prometheus_url: "https://trickster.production.ott.kaltura.com"
-    dry_run: false
 ```
 
 ## 📦 Installation
