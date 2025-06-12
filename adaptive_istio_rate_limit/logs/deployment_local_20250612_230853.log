@@ -1,0 +1,35 @@
+2025-06-12 23:08:53,437 - deployment_manager_local - INFO - 🚀 Starting local deployment (dry_run=False)
+2025-06-12 23:08:53,438 - deployment_manager_local - INFO - 🔧 Checking prerequisites for local environment
+2025-06-12 23:08:57,207 - deployment_manager_local - INFO - ✅ python: OK
+2025-06-12 23:08:57,207 - deployment_manager_local - INFO - ✅ kubectl: OK
+2025-06-12 23:08:57,207 - deployment_manager_local - INFO - ✅ docker: OK
+2025-06-12 23:08:57,207 - deployment_manager_local - INFO - ✅ helm: OK
+2025-06-12 23:08:57,207 - deployment_manager_local - INFO - ✅ aws_cli: OK
+2025-06-12 23:08:57,207 - deployment_manager_local - INFO - ✅ kube_config: OK
+2025-06-12 23:08:57,208 - deployment_manager_local - INFO - ❌ prometheus: FAILED
+2025-06-12 23:08:57,208 - deployment_manager_local - INFO - 🎭 Simulating EKS environment locally
+2025-06-12 23:08:57,221 - deployment_manager_local - INFO - ✅ EKS environment simulation completed
+2025-06-12 23:08:57,221 - deployment_manager_local - INFO - 📋 Generating rate limit configurations
+2025-06-12 23:09:00,055 - deployment_manager_local - ERROR - Configuration generation failed: 'DEPLOYMENT'
+2025-06-12 23:09:00,055 - deployment_manager_local - INFO - ☸️  Applying Kubernetes resources (dry_run=False)
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250610_173240.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250612_175504.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250610_175726.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250610_160945.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250610_160040.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250610_174916.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250610_155334.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250610_130003.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250612_223316.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250612_150044.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250612_175844.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250610_170238.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250610_154946.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250612_223919.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250610_152211.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250612_224028.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250610_174338.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250610_153724.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - [DRY RUN] Would apply: local_configmap_20250610_153323.yaml
+2025-06-12 23:09:00,056 - deployment_manager_local - INFO - ✅ Validating deployment
+2025-06-12 23:09:00,061 - deployment_manager_local - INFO - 📄 Deployment report saved to: /Users/litan.shamir/repos/TrendMaster-AI/adaptive_istio_rate_limit/logs/deployment_report_local_20250612_230900.json

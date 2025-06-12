@@ -1,0 +1,408 @@
+# Testing Environment Configuration
+# This file contains environment-specific settings for testing/staging environment
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trendmaster-ai-testing-config
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: testing
+    managed-by: trendmaster-ai
+data:
+  environment: "testing"
+  deployment_mode: "testing"
+  
+  # Kubernetes Configuration
+  kubernetes_context: "eks-testing"
+  kubernetes_namespace: "istio-system"
+  
+  # Prometheus Configuration
+  prometheus_url: "https://trickster.orp2.ott.kaltura.com"
+  use_mock_data: "false"
+  
+  # Safety Settings
+  dry_run: "true"  # Testing should be safe by default
+  preview_only: "true"
+  verbose_logging: "true"
+  generate_reports: "true"
+  
+  # EKS Configuration
+  cluster_name: "kaltura-ott-testing"
+  region: "us-east-1"
+  
+  # Rate Limiting Configuration
+  min_rate_limit: "100"
+  max_rate_limit: "50000"
+  safety_margin: "1.5"  # Higher safety margin for testing
+  
+  # Monitoring
+  monitoring_enabled: "true"
+  dashboard_enabled: "true"
+  alerting_enabled: "true"
+  
+  # Testing Features
+  canary_deployment: "true"
+  rollback_enabled: "true"
+  health_checks_enabled: "true"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: trendmaster-ai-testing-secrets
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: testing
+type: Opaque
+data:
+  # Base64 encoded secrets (replace with actual values)
+  prometheus_token: ""
+  slack_webhook: ""
+  aws_access_key: ""
+  aws_secret_key: ""
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trendmaster-ai-testing
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: testing
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+spec:
+  selector:
+    app: trendmaster-ai
+    environment: testing
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+  - name: grpc
+    port: 9091
+    targetPort: 9091
+  type: LoadBalancer
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trendmaster-ai-testing
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: testing
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+spec:
+  replicas: 2  # Higher availability for testing
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: trendmaster-ai
+      environment: testing
+  template:
+    metadata:
+      labels:
+        app: trendmaster-ai
+        environment: testing
+        version: v1
+      annotations:
+        sidecar.istio.io/inject: "true"
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: trendmaster-ai-testing
+      containers:
+      - name: trendmaster-ai
+        image: trendmaster-ai:testing
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+        - containerPort: 9091
+          name: grpc
+        env:
+        - name: ENVIRONMENT
+          value: "testing"
+        - name: DRY_RUN
+          value: "true"
+        - name: USE_MOCK_DATA
+          value: "false"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        envFrom:
+        - configMapRef:
+            name: trendmaster-ai-testing-config
+        - secretRef:
+            name: trendmaster-ai-testing-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /startup
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 10
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+          readOnly: true
+        - name: secrets
+          mountPath: /app/secrets
+          readOnly: true
+        - name: output
+          mountPath: /app/output
+        - name: logs
+          mountPath: /app/logs
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: config
+        configMap:
+          name: trendmaster-ai-testing-config
+      - name: secrets
+        secret:
+          secretName: trendmaster-ai-testing-secrets
+      - name: output
+        emptyDir: {}
+      - name: logs
+        emptyDir: {}
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      tolerations:
+      - key: "testing"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: trendmaster-ai-testing
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: testing
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT-ID:role/trendmaster-ai-testing-role
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: trendmaster-ai-testing
+  labels:
+    app: trendmaster-ai
+    environment: testing
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+- apiGroups: ["networking.istio.io"]
+  resources: ["envoyfilters", "destinationrules"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: trendmaster-ai-testing
+  labels:
+    app: trendmaster-ai
+    environment: testing
+subjects:
+- kind: ServiceAccount
+  name: trendmaster-ai-testing
+  namespace: istio-system
+roleRef:
+  kind: ClusterRole
+  name: trendmaster-ai-testing
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: trendmaster-ai-testing
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: testing
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: trendmaster-ai-testing
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 25
+        periodSeconds: 60
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: trendmaster-ai-testing
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: testing
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: trendmaster-ai
+      environment: testing
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: trendmaster-ai-testing
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: testing
+spec:
+  hosts:
+  - trendmaster-ai-testing.istio-system.svc.cluster.local
+  http:
+  - match:
+    - headers:
+        canary:
+          exact: "true"
+    route:
+    - destination:
+        host: trendmaster-ai-testing.istio-system.svc.cluster.local
+        subset: canary
+      weight: 100
+  - route:
+    - destination:
+        host: trendmaster-ai-testing.istio-system.svc.cluster.local
+        subset: stable
+      weight: 100
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: trendmaster-ai-testing
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: testing
+spec:
+  host: trendmaster-ai-testing.istio-system.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        maxRequestsPerConnection: 10
+    loadBalancer:
+      simple: LEAST_CONN
+    outlierDetection:
+      consecutiveErrors: 3
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+  subsets:
+  - name: stable
+    labels:
+      version: v1
+  - name: canary
+    labels:
+      version: v2

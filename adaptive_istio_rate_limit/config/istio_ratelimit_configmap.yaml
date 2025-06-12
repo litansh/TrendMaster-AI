@@ -3,15 +3,70 @@ kind: ConfigMap
 metadata:
   name: rate-limit-values-config
   namespace: istio-system
+  labels:
+    app: adaptive-rate-limiter
+    component: configuration
 data:
   config.yaml: |
-    PROMETHEUS_URL: "https://trickster.orp2.ott.kaltura.com"
-    ENV: "orp2"
-    GITHUB_REPO_URL: "XXX"
-    GITHUB_TOKEN: "XXX"
-    GITHUB_REPO_PATH: "/app/repo"
-    CONFIGMAP_NAME: "ratelimit-config"
-    CONFIGMAP_NAMESPACE: "istio-system"
-    DAYS_TO_INSPECT: 7
-    LOG_LEVEL: "DEBUG"
-    SHOW_ONLY_CONFIGURED: True
+    # Adaptive Istio Rate Limiting System Configuration
+    DEPLOYMENT:
+      MODE: "production"
+      ENVIRONMENT: "orp2"
+
+    ENVIRONMENTS:
+      production:
+        PROMETHEUS_URL: "https://trickster.orp2.ott.kaltura.com"
+        KUBERNETES_CONFIG: "/root/.kube/config"
+        KUBERNETES_CONTEXT: "eks-production"
+        CONFIGMAP_NAMESPACE: "istio-system"
+        DRY_RUN: false
+        PREVIEW_ONLY: false
+        ENABLE_UPDATES: true
+        MONITORING_ENABLED: true
+
+    COMMON:
+      ENV: "orp2"
+      DAYS_TO_INSPECT: 7
+      LOG_LEVEL: "INFO"
+      SHOW_ONLY_CONFIGURED: true
+      
+      # Enhanced Rate Calculation
+      RATE_CALCULATION:
+        cache_ratio: 1.2
+        formula_version: "v2"
+        safety_margin: 1.3
+        min_rate_limit: 100
+        max_rate_limit: 100000
+        rounding_method: "nearest_hundred"
+        
+      # Prophet Configuration
+      PROPHET_CONFIG:
+        enabled: true
+        seasonality_mode: 'multiplicative'
+        weekly_seasonality: true
+        daily_seasonality: true
+        uncertainty_samples: 1000
+
+      # Prime Time Detection
+      PRIME_TIME_CONFIG:
+        detection_method: 'dynamic'
+        percentile_threshold: 75
+        min_duration: 60
+
+      # Anomaly Detection
+      ANOMALY_CONFIG:
+        methods: ['prophet', 'statistical']
+        sensitivity: 'medium'
+        spike_threshold_multiplier: 3.0
+
+      # Kubernetes Operator
+      OPERATOR_CONFIG:
+        enabled: true
+        interval: 300
+        configmap_name: "ratelimit-config"
+
+      # Monitoring
+      MONITORING:
+        enabled: true
+        alert_threshold: 0.2
+        metrics_retention: 30

@@ -15,7 +15,7 @@ data:
           value: /api_v3/service/asset/action/getplaybackcontext
           rate_limit:
             unit: minute
-            requests_per_unit: 30000
+            requests_per_unit: 45000
         - key: PATH
           value: /api_v3/service/userassetrule/action/list
           rate_limit:
@@ -91,4 +91,3 @@ metadata:
     app.kubernetes.io/instance: orp2-istio-ratelimit
   name: ratelimit-config
   namespace: istio-system
-

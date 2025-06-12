@@ -1,20 +1,17 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: Job
 metadata:
-  name: adaptive-rate-limiter
+  name: adaptive-rate-limiter-job
+  namespace: istio-system
   labels:
     app: adaptive-rate-limiter
-    component: rate-limiting
+    component: job
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: adaptive-rate-limiter
   template:
     metadata:
       labels:
         app: adaptive-rate-limiter
-        component: rate-limiting
+        component: job
     spec:
       serviceAccountName: adaptive-rate-limiter
       containers:
@@ -40,8 +37,11 @@ spec:
       volumes:
       - name: config-volume
         configMap:
-          name: adaptive-rate-limiter-config
+          name: rate-limit-values-config
       - name: kubeconfig-volume
         secret:
           secretName: kubeconfig-secret
           optional: true
+      restartPolicy: Never
+  backoffLimit: 3
+  activeDeadlineSeconds: 1800  # 30 minutes timeout

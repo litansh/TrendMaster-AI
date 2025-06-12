@@ -1,0 +1,11 @@
+apiVersion: v1
+data:
+  config.yaml: "domain: trendmaster-ai\ndescriptors:\n  - key: partner_id\n    value:\
+    \ \"313\"\n    rate_limit:\n      unit: minute\n      requests_per_unit: 1000"
+kind: ConfigMap
+metadata:
+  labels:
+    environment: local
+    managed-by: trendmaster-ai
+  name: ratelimit-config
+  namespace: istio-system

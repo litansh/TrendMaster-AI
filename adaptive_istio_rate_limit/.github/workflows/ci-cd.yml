@@ -1,0 +1,248 @@
+name: TrendMaster-AI CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  PYTHON_VERSION: '3.11'
+  DOCKER_REGISTRY: 'your-registry.com'
+  IMAGE_NAME: 'trendmaster-ai'
+
+jobs:
+  sanity-tests:
+    name: 🧪 Sanity Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        
+    - name: 📦 Install Dependencies
+      run: |
+        cd TrendMaster-AI/adaptive_istio_rate_limit
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: 🔧 Setup Environment
+      run: |
+        cd TrendMaster-AI/adaptive_istio_rate_limit
+        # Ensure all __init__.py files exist
+        find . -type d -name "scripts" -exec touch {}/__init__.py \;
+        find . -type d -name "core" -exec touch {}/__init__.py \;
+        find . -type d -name "tests" -exec touch {}/__init__.py \;
+        
+    - name: 🧪 Run Sanity Tests
+      run: |
+        cd TrendMaster-AI/adaptive_istio_rate_limit
+        echo "🚀 Starting TrendMaster-AI Sanity Tests..."
+        python3 tests/test_sanity.py
+        
+    - name: ✅ Sanity Test Results
+      if: success()
+      run: |
+        echo "🎉 All sanity tests passed! System is ready for deployment."
+        
+    - name: ❌ Sanity Test Failure
+      if: failure()
+      run: |
+        echo "💥 Sanity tests failed! Blocking deployment."
+        exit 1
+
+  unit-tests:
+    name: 🔬 Unit Tests
+    runs-on: ubuntu-latest
+    needs: sanity-tests
+    timeout-minutes: 10
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        
+    - name: 📦 Install Dependencies
+      run: |
+        cd TrendMaster-AI/adaptive_istio_rate_limit
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+        
+    - name: 🔬 Run Unit Tests
+      run: |
+        cd TrendMaster-AI/adaptive_istio_rate_limit
+        pytest tests/ -v --cov=scripts/ --cov-report=xml --cov-report=term
+        
+    - name: 📊 Upload Coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./TrendMaster-AI/adaptive_istio_rate_limit/coverage.xml
+        flags: unittests
+
+  integration-tests:
+    name: 🔗 Integration Tests
+    runs-on: ubuntu-latest
+    needs: [sanity-tests, unit-tests]
+    timeout-minutes: 20
+    
+    services:
+      prometheus:
+        image: prom/prometheus:latest
+        ports:
+          - 9090:9090
+          
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        
+    - name: 📦 Install Dependencies
+      run: |
+        cd TrendMaster-AI/adaptive_istio_rate_limit
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: 🔗 Run Integration Tests
+      run: |
+        cd TrendMaster-AI/adaptive_istio_rate_limit
+        python3 tests/test_local.py
+        
+  security-scan:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    needs: sanity-tests
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🔒 Run Security Scan
+      uses: pypa/gh-action-pip-audit@v1.0.8
+      with:
+        inputs: TrendMaster-AI/adaptive_istio_rate_limit/requirements.txt
+
+  build-and-test:
+    name: 🏗️ Build & Test Docker Image
+    runs-on: ubuntu-latest
+    needs: [sanity-tests, unit-tests]
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🐳 Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: 🏗️ Build Docker Image
+      run: |
+        cd TrendMaster-AI/adaptive_istio_rate_limit
+        docker build -t ${{ env.IMAGE_NAME }}:test .
+        
+    - name: 🧪 Test Docker Image
+      run: |
+        # Test that the container can start and run sanity tests
+        docker run --rm ${{ env.IMAGE_NAME }}:test python3 tests/test_sanity.py
+
+  deploy-staging:
+    name: 🚀 Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [sanity-tests, unit-tests, integration-tests, security-scan, build-and-test]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🔧 Configure Kubernetes
+      uses: azure/k8s-set-context@v3
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG_STAGING }}
+        
+    - name: 🚀 Deploy to Staging
+      run: |
+        echo "🚀 Deploying TrendMaster-AI to staging environment..."
+        # Add your staging deployment commands here
+        kubectl apply -f k8s/staging/
+        
+    - name: 🧪 Post-Deployment Sanity Check
+      run: |
+        echo "🧪 Running post-deployment sanity check..."
+        # Wait for deployment to be ready
+        kubectl wait --for=condition=available --timeout=300s deployment/trendmaster-ai-staging
+        # Run sanity tests against staging environment
+        kubectl exec deployment/trendmaster-ai-staging -- python3 tests/test_sanity.py
+
+  deploy-production:
+    name: 🏭 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [sanity-tests, unit-tests, integration-tests, security-scan, build-and-test]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🔧 Configure Kubernetes
+      uses: azure/k8s-set-context@v3
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG_PROD }}
+        
+    - name: 🏭 Deploy to Production
+      run: |
+        echo "🏭 Deploying TrendMaster-AI to production environment..."
+        # Add your production deployment commands here
+        kubectl apply -f k8s/production/
+        
+    - name: 🧪 Post-Deployment Sanity Check
+      run: |
+        echo "🧪 Running post-deployment sanity check..."
+        # Wait for deployment to be ready
+        kubectl wait --for=condition=available --timeout=300s deployment/trendmaster-ai-prod
+        # Run sanity tests against production environment
+        kubectl exec deployment/trendmaster-ai-prod -- python3 tests/test_sanity.py
+        
+    - name: 📊 Production Health Check
+      run: |
+        echo "📊 Performing comprehensive health check..."
+        # Add comprehensive health checks here
+        kubectl get pods -l app=trendmaster-ai
+        kubectl logs -l app=trendmaster-ai --tail=50
+
+  notify:
+    name: 📢 Notify
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+    
+    steps:
+    - name: 📢 Notify Success
+      if: success()
+      run: |
+        echo "🎉 TrendMaster-AI deployment completed successfully!"
+        
+    - name: 📢 Notify Failure
+      if: failure()
+      run: |
+        echo "💥 TrendMaster-AI deployment failed!"

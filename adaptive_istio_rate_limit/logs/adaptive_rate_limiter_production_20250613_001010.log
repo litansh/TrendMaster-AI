@@ -1,0 +1,22 @@
+2025-06-13 00:10:10,901 - trendmaster_ai - INFO - [main.py:106] - Logging to file: /Users/litan.shamir/repos/TrendMaster-AI/adaptive_istio_rate_limit/logs/adaptive_rate_limiter_production_20250613_001010.log
+2025-06-13 00:10:10,901 - trendmaster_ai - INFO - [main.py:119] - Prometheus client initialized: https://trickster.production.ott.kaltura.com
+2025-06-13 00:10:10,901 - trendmaster_ai - INFO - [main.py:142] - All components initialized successfully
+2025-06-13 00:10:10,901 - trendmaster_ai - INFO - [main.py:64] - ================================================================================
+2025-06-13 00:10:10,901 - trendmaster_ai - INFO - [main.py:65] - TrendMaster-AI Adaptive Istio Rate Limiting System v3.0
+2025-06-13 00:10:10,901 - trendmaster_ai - INFO - [main.py:66] - ================================================================================
+2025-06-13 00:10:10,901 - trendmaster_ai - INFO - [main.py:67] - Environment: production
+2025-06-13 00:10:10,901 - trendmaster_ai - INFO - [main.py:68] - Deployment Mode: production
+2025-06-13 00:10:10,901 - trendmaster_ai - INFO - [main.py:69] - Trickster Environment: production
+2025-06-13 00:10:10,901 - trendmaster_ai - INFO - [main.py:70] - Partners: 2 configured
+2025-06-13 00:10:10,901 - trendmaster_ai - INFO - [main.py:71] - APIs: 1 configured
+2025-06-13 00:10:10,901 - trendmaster_ai - INFO - [main.py:72] - Dry Run: False
+2025-06-13 00:10:10,901 - trendmaster_ai - INFO - [main.py:73] - ================================================================================
+2025-06-13 00:10:10,901 - trendmaster_ai - INFO - [main.py:194] - 🚀 Starting adaptive rate limiting analysis
+2025-06-13 00:10:10,902 - trendmaster_ai - INFO - [main.py:150] - Validating environment configuration...
+2025-06-13 00:10:18,033 - trendmaster_ai - INFO - [main.py:177] - ✅ Environment validation passed
+2025-06-13 00:10:18,034 - trendmaster_ai - INFO - [main.py:209] - Processing 1 partners and 1 APIs
+2025-06-13 00:10:18,034 - trendmaster_ai - INFO - [main.py:227] - 📊 Processing partner: 100
+2025-06-13 00:10:18,034 - trendmaster_ai - WARNING - [main.py:235] - Skipping 100//api_v3/service/multirequest: Excluded by configuration
+2025-06-13 00:10:18,036 - trendmaster_ai - INFO - [main.py:274] - ✅ Analysis completed in 7.13 seconds
+2025-06-13 00:10:18,036 - trendmaster_ai - INFO - [main.py:275] - 📈 Generated 0 ConfigMaps
+2025-06-13 00:10:18,036 - trendmaster_ai - INFO - [main.py:276] - 📄 Report saved to: /Users/litan.shamir/repos/TrendMaster-AI/adaptive_istio_rate_limit/output/analysis_report_20250613_001018.md

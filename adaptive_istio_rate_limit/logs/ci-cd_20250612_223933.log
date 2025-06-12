@@ -1,0 +1,36 @@
+[0;34m
+==================================================
+🏃 Quick Pipeline (Sanity + Build)
+==================================================
+[0m
+[0;34m
+==================================================
+🔧 Checking Prerequisites
+==================================================
+[0m
+[0;34mℹ️  Python version: 3.11.2[0m
+[0;32m✅ Prerequisites check completed[0m
+[0;34m
+==================================================
+🏗️  Setting Up Environment
+==================================================
+[0m
+[0;34mℹ️  Installing Python dependencies...[0m
+[0;32m✅ Environment setup completed[0m
+[0;34m
+==================================================
+🧪 Running Sanity Tests (CRITICAL GATE)
+==================================================
+[0m
+[0;34mℹ️  Starting TrendMaster-AI sanity tests...[0m
+[0;34mℹ️  This is a critical gate - deployment will be blocked if tests fail[0m
+[0;32m✅ 🎉 ALL SANITY TESTS PASSED![0m
+[0;32m✅ System functionality verified - proceeding with pipeline[0m
+[0;34m
+==================================================
+🏗️  Build Validation
+==================================================
+[0m
+[0;34mℹ️  Validating Python syntax...[0m
+[0;34mℹ️  Checking imports...[0m
+[0;32m✅ Build validation completed[0m

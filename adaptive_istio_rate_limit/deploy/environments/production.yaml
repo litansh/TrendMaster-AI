@@ -1,0 +1,690 @@
+# Production Environment Configuration
+# This file contains environment-specific settings for production environment
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trendmaster-ai-production-config
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: production
+    managed-by: trendmaster-ai
+    version: v1.0.0
+data:
+  environment: "production"
+  deployment_mode: "production"
+  
+  # Kubernetes Configuration
+  kubernetes_context: "eks-production"
+  kubernetes_namespace: "istio-system"
+  
+  # Prometheus Configuration
+  prometheus_url: "https://trickster.orp2.ott.kaltura.com"
+  use_mock_data: "false"
+  
+  # Production Settings
+  dry_run: "false"  # Production allows real updates
+  preview_only: "false"
+  enable_updates: "true"
+  verbose_logging: "false"  # Reduced logging for production
+  
+  # EKS Configuration
+  cluster_name: "kaltura-ott-production"
+  region: "us-east-1"
+  
+  # Rate Limiting Configuration
+  min_rate_limit: "100"
+  max_rate_limit: "100000"
+  safety_margin: "1.3"
+  cache_ratio: "1.2"
+  formula_version: "v2"
+  
+  # Monitoring & Alerting
+  monitoring_enabled: "true"
+  dashboard_enabled: "true"
+  alerting_enabled: "true"
+  metrics_retention: "30"
+  alert_threshold: "0.2"
+  
+  # Production Features
+  blue_green_deployment: "true"
+  rollback_enabled: "true"
+  health_checks_enabled: "true"
+  circuit_breaker_enabled: "true"
+  
+  # Performance Settings
+  max_concurrent_analyses: "10"
+  analysis_timeout: "300"
+  batch_size: "100"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: trendmaster-ai-production-secrets
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: production
+type: Opaque
+data:
+  # Base64 encoded secrets (replace with actual values from AWS Secrets Manager)
+  prometheus_token: ""
+  slack_webhook: ""
+  aws_access_key: ""
+  aws_secret_key: ""
+  datadog_api_key: ""
+  pagerduty_token: ""
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trendmaster-ai-production
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: production
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  selector:
+    app: trendmaster-ai
+    environment: production
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  - name: grpc
+    port: 9091
+    targetPort: 9091
+    protocol: TCP
+  - name: health
+    port: 8081
+    targetPort: 8081
+    protocol: TCP
+  type: LoadBalancer
+  sessionAffinity: None
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trendmaster-ai-production
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: production
+    version: v1.0.0
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    kubernetes.io/change-cause: "Initial production deployment"
+spec:
+  replicas: 3  # High availability for production
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Zero downtime deployment
+  selector:
+    matchLabels:
+      app: trendmaster-ai
+      environment: production
+  template:
+    metadata:
+      labels:
+        app: trendmaster-ai
+        environment: production
+        version: v1
+      annotations:
+        sidecar.istio.io/inject: "true"
+        sidecar.istio.io/proxyCPU: "100m"
+        sidecar.istio.io/proxyMemory: "128Mi"
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+    spec:
+      serviceAccountName: trendmaster-ai-production
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: trendmaster-ai
+        image: trendmaster-ai:v1.0.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 9090
+          name: metrics
+          protocol: TCP
+        - containerPort: 9091
+          name: grpc
+          protocol: TCP
+        - containerPort: 8081
+          name: health
+          protocol: TCP
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: DRY_RUN
+          value: "false"
+        - name: USE_MOCK_DATA
+          value: "false"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: CLUSTER_NAME
+          value: "kaltura-ott-production"
+        envFrom:
+        - configMapRef:
+            name: trendmaster-ai-production-config
+        - secretRef:
+            name: trendmaster-ai-production-secrets
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+            ephemeral-storage: "1Gi"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+            ephemeral-storage: "2Gi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+            scheme: HTTP
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8081
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        startupProbe:
+          httpGet:
+            path: /startup
+            port: 8081
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 12
+          successThreshold: 1
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+          readOnly: true
+        - name: secrets
+          mountPath: /app/secrets
+          readOnly: true
+        - name: output
+          mountPath: /app/output
+        - name: logs
+          mountPath: /app/logs
+        - name: tmp
+          mountPath: /tmp
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - "sleep 15"  # Grace period for connection draining
+      volumes:
+      - name: config
+        configMap:
+          name: trendmaster-ai-production-config
+          defaultMode: 0644
+      - name: secrets
+        secret:
+          secretName: trendmaster-ai-production-secrets
+          defaultMode: 0600
+      - name: output
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: logs
+        emptyDir:
+          sizeLimit: 500Mi
+      - name: tmp
+        emptyDir:
+          sizeLimit: 100Mi
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      nodeSelector:
+        kubernetes.io/arch: amd64
+        node.kubernetes.io/instance-type: "m5.large"
+      tolerations:
+      - key: "production"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - trendmaster-ai
+              topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                - amd64
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: trendmaster-ai-production
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: production
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT-ID:role/trendmaster-ai-production-role
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: trendmaster-ai-production
+  labels:
+    app: trendmaster-ai
+    environment: production
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+  resourceNames: ["ratelimit-config", "istio-ratelimit-config"]
+- apiGroups: ["networking.istio.io"]
+  resources: ["envoyfilters", "destinationrules", "virtualservices"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["pods", "nodes"]
+  verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: trendmaster-ai-production
+  labels:
+    app: trendmaster-ai
+    environment: production
+subjects:
+- kind: ServiceAccount
+  name: trendmaster-ai-production
+  namespace: istio-system
+roleRef:
+  kind: ClusterRole
+  name: trendmaster-ai-production
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: trendmaster-ai-production
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: trendmaster-ai-production
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Pods
+    pods:
+      metric:
+        name: http_requests_per_second
+      target:
+        type: AverageValue
+        averageValue: "100"
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 25
+        periodSeconds: 60
+      - type: Pods
+        value: 2
+        periodSeconds: 60
+      selectPolicy: Min
+    scaleDown:
+      stabilizationWindowSeconds: 600
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+      selectPolicy: Min
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: trendmaster-ai-production
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: production
+spec:
+  minAvailable: 2  # Always keep at least 2 pods running
+  selector:
+    matchLabels:
+      app: trendmaster-ai
+      environment: production
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: trendmaster-ai-production
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: production
+spec:
+  hosts:
+  - trendmaster-ai-production.istio-system.svc.cluster.local
+  http:
+  - match:
+    - headers:
+        x-canary:
+          exact: "true"
+    route:
+    - destination:
+        host: trendmaster-ai-production.istio-system.svc.cluster.local
+        subset: canary
+      weight: 100
+    fault:
+      delay:
+        percentage:
+          value: 0.1
+        fixedDelay: 5s
+  - route:
+    - destination:
+        host: trendmaster-ai-production.istio-system.svc.cluster.local
+        subset: stable
+      weight: 100
+    timeout: 60s
+    retries:
+      attempts: 3
+      perTryTimeout: 20s
+      retryOn: 5xx,reset,connect-failure,refused-stream
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: trendmaster-ai-production
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: production
+spec:
+  host: trendmaster-ai-production.istio-system.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 200
+        connectTimeout: 30s
+        tcpKeepalive:
+          time: 7200s
+          interval: 75s
+      http:
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 200
+        maxRequestsPerConnection: 20
+        maxRetries: 3
+        consecutiveGatewayErrors: 5
+        h2UpgradePolicy: UPGRADE
+    loadBalancer:
+      simple: LEAST_CONN
+      consistentHash:
+        httpHeaderName: "x-user-id"
+    outlierDetection:
+      consecutiveGatewayErrors: 5
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 30
+  subsets:
+  - name: stable
+    labels:
+      version: v1
+    trafficPolicy:
+      connectionPool:
+        tcp:
+          maxConnections: 150
+  - name: canary
+    labels:
+      version: v2
+    trafficPolicy:
+      connectionPool:
+        tcp:
+          maxConnections: 50
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: trendmaster-ai-production-circuit-breaker
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: production
+spec:
+  workloadSelector:
+    labels:
+      app: trendmaster-ai
+      environment: production
+  configPatches:
+  - applyTo: HTTP_FILTER
+    match:
+      context: SIDECAR_INBOUND
+      listener:
+        filterChain:
+          filter:
+            name: "envoy.filters.network.http_connection_manager"
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        name: envoy.filters.http.local_ratelimit
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+          value:
+            stat_prefix: trendmaster_ai_rate_limiter
+            token_bucket:
+              max_tokens: 1000
+              tokens_per_fill: 100
+              fill_interval: 1s
+            filter_enabled:
+              runtime_key: local_rate_limit_enabled
+              default_value:
+                numerator: 100
+                denominator: HUNDRED
+            filter_enforced:
+              runtime_key: local_rate_limit_enforced
+              default_value:
+                numerator: 100
+                denominator: HUNDRED
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trendmaster-ai-production-monitoring
+  namespace: istio-system
+  labels:
+    app: trendmaster-ai
+    environment: production
+    component: monitoring
+data:
+  dashboard.json: |
+    {
+      "dashboard": {
+        "title": "TrendMaster-AI Production Dashboard",
+        "tags": ["trendmaster-ai", "production", "rate-limiting"],
+        "timezone": "UTC",
+        "panels": [
+          {
+            "title": "Request Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "sum(rate(istio_requests_total{destination_service_name=\"trendmaster-ai-production\"}[5m]))",
+                "legendFormat": "Total Requests/sec"
+              }
+            ]
+          },
+          {
+            "title": "Rate Limit Effectiveness",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "sum(rate(envoy_http_local_rate_limiter_rate_limited_total[5m]))",
+                "legendFormat": "Rate Limited Requests/sec"
+              }
+            ]
+          },
+          {
+            "title": "Error Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "sum(rate(istio_requests_total{destination_service_name=\"trendmaster-ai-production\",response_code!~\"2..\"}[5m])) / sum(rate(istio_requests_total{destination_service_name=\"trendmaster-ai-production\"}[5m]))",
+                "legendFormat": "Error Rate %"
+              }
+            ]
+          },
+          {
+            "title": "Pod Status",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "kube_pod_status_ready{pod=~\"trendmaster-ai-production-.*\"}",
+                "legendFormat": "Ready Pods"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  
+  alerts.yaml: |
+    groups:
+    - name: trendmaster-ai-production
+      rules:
+      - alert: TrendMasterAIHighErrorRate
+        expr: sum(rate(istio_requests_total{destination_service_name="trendmaster-ai-production",response_code!~"2.."}[5m])) / sum(rate(istio_requests_total{destination_service_name="trendmaster-ai-production"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          environment: production
+        annotations:
+          summary: "TrendMaster-AI high error rate"
+          description: "Error rate is {{ $value | humanizePercentage }} for 5 minutes"
+      
+      - alert: TrendMasterAIPodDown
+        expr: kube_pod_status_ready{pod=~"trendmaster-ai-production-.*"} == 0
+        for: 1m
+        labels:
+          severity: warning
+          environment: production
+        annotations:
+          summary: "TrendMaster-AI pod is down"
+          description: "Pod {{ $labels.pod }} has been down for more than 1 minute"
+      
+      - alert: TrendMasterAIHighLatency
+        expr: histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="trendmaster-ai-production"}[5m])) by (le)) > 1000
+        for: 10m
+        labels:
+          severity: warning
+          environment: production
+        annotations:
+          summary: "TrendMaster-AI high latency"
+          description: "95th percentile latency is {{ $value }}ms for 10 minutes"

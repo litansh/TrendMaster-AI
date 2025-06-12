@@ -1,0 +1,13 @@
+2025-06-12 23:13:43,414 - deployment_manager_testing - INFO - 🚀 Starting testing deployment (dry_run=False)
+2025-06-12 23:13:43,414 - deployment_manager_testing - INFO - 🔧 Checking prerequisites for testing environment
+2025-06-12 23:13:47,640 - deployment_manager_testing - INFO - ✅ python: OK
+2025-06-12 23:13:47,640 - deployment_manager_testing - INFO - ✅ kubectl: OK
+2025-06-12 23:13:47,640 - deployment_manager_testing - INFO - ✅ docker: OK
+2025-06-12 23:13:47,640 - deployment_manager_testing - INFO - ✅ helm: OK
+2025-06-12 23:13:47,640 - deployment_manager_testing - INFO - ✅ aws_cli: OK
+2025-06-12 23:13:47,640 - deployment_manager_testing - INFO - ✅ kube_config: OK
+2025-06-12 23:13:47,640 - deployment_manager_testing - INFO - ❌ prometheus: FAILED
+2025-06-12 23:13:47,640 - deployment_manager_testing - INFO - 📋 Generating rate limit configurations
+2025-06-12 23:14:43,500 - deployment_manager_testing - INFO - ☸️  Applying Kubernetes resources (dry_run=False)
+2025-06-12 23:14:46,153 - deployment_manager_testing - INFO - ✅ Validating deployment
+2025-06-12 23:14:46,254 - deployment_manager_testing - INFO - 📄 Deployment report saved to: /Users/litan.shamir/repos/TrendMaster-AI/adaptive_istio_rate_limit/logs/deployment_report_testing_20250612_231446.json

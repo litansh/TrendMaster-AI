@@ -1,38 +1,52 @@
 apiVersion: batch/v1
-kind: Job
+kind: CronJob
 metadata:
-  name: update-rate-limits
+  name: adaptive-rate-limiter-cronjob
+  namespace: istio-system
+  labels:
+    app: adaptive-rate-limiter
+    component: cronjob
 spec:
-  template:
+  schedule: "0 */6 * * *"  # Run every 6 hours
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
     spec:
-      containers:
-      - name: update-rate-limits
-        image: XXXe:latest
-        env:
-        - name: PROMETHEUS_URL
-          value: "https://trickster.orp2.ott.kaltura.com"
-        - name: GITHUB_REPO_URL
-          value: "XXX"
-        - name: GITHUB_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: github-token-secret
-              key: token
-        - name: GITHUB_REPO_PATH
-          value: "/app/repo"
-        - name: CONFIGMAP_NAME
-          value: "ratelimit-config"
-        - name: NAMESPACE
-          value: "istio-system"
-        - name: DAYS_TO_INSPECT
-          value: "30"
-        - name: LOG_LEVEL
-          value: "INFO"
-        volumeMounts:
-        - name: repo-volume
-          mountPath: /app/repo
-      restartPolicy: Never
-      volumes:
-      - name: repo-volume
-        emptyDir: {}
-  backoffLimit: 4
+      template:
+        metadata:
+          labels:
+            app: adaptive-rate-limiter
+            component: cronjob
+        spec:
+          serviceAccountName: adaptive-rate-limiter
+          containers:
+          - name: adaptive-rate-limiter
+            image: litanshamir/ratelimit_values:latest
+            command: ["python3", "scripts/main.py"]
+            env:
+            - name: CONFIG_PATH
+              value: "/etc/config/config.yaml"
+            volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+            - name: kubeconfig-volume
+              mountPath: /root/.kube
+              readOnly: true
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "100m"
+              limits:
+                memory: "512Mi"
+                cpu: "500m"
+          volumes:
+          - name: config-volume
+            configMap:
+              name: rate-limit-values-config
+          - name: kubeconfig-volume
+            secret:
+              secretName: kubeconfig-secret
+              optional: true
+          restartPolicy: OnFailure
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800  # 30 minutes timeout

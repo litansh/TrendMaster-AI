@@ -1,0 +1,13 @@
+2025-06-13 00:09:00,906 - trendmaster_ai - INFO - [main.py:106] - Logging to file: /Users/litan.shamir/repos/TrendMaster-AI/adaptive_istio_rate_limit/logs/adaptive_rate_limiter_production_20250613_000900.log
+2025-06-13 00:09:00,906 - trendmaster_ai - INFO - [main.py:119] - Prometheus client initialized: https://trickster.production.ott.kaltura.com
+2025-06-13 00:09:00,907 - trendmaster_ai - INFO - [main.py:142] - All components initialized successfully
+2025-06-13 00:09:00,907 - trendmaster_ai - INFO - [main.py:64] - ================================================================================
+2025-06-13 00:09:00,907 - trendmaster_ai - INFO - [main.py:65] - TrendMaster-AI Adaptive Istio Rate Limiting System v3.0
+2025-06-13 00:09:00,907 - trendmaster_ai - INFO - [main.py:66] - ================================================================================
+2025-06-13 00:09:00,907 - trendmaster_ai - INFO - [main.py:67] - Environment: production
+2025-06-13 00:09:00,907 - trendmaster_ai - INFO - [main.py:68] - Deployment Mode: production
+2025-06-13 00:09:00,907 - trendmaster_ai - INFO - [main.py:69] - Trickster Environment: production
+2025-06-13 00:09:00,907 - trendmaster_ai - INFO - [main.py:70] - Partners: 6 configured
+2025-06-13 00:09:00,907 - trendmaster_ai - INFO - [main.py:71] - APIs: 3 configured
+2025-06-13 00:09:00,907 - trendmaster_ai - INFO - [main.py:72] - Dry Run: False
+2025-06-13 00:09:00,907 - trendmaster_ai - INFO - [main.py:73] - ================================================================================

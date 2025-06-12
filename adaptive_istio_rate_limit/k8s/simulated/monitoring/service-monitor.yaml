@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    environment: local
+    managed-by: trendmaster-ai
+  name: trendmaster-ai-metrics
+  namespace: monitoring
+spec:
+  endpoints:
+  - interval: 30s
+    path: /metrics
+    port: metrics
+  selector:
+    matchLabels:
+      app: trendmaster-ai

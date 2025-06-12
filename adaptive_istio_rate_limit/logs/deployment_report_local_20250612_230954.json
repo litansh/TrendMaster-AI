@@ -1,0 +1,140 @@
+{
+  "environment": "local",
+  "timestamp": "2025-06-12T23:09:52.776973",
+  "dry_run": false,
+  "steps": {
+    "prerequisites": {
+      "status": "warning",
+      "details": {
+        "python": true,
+        "kubectl": true,
+        "docker": true,
+        "helm": true,
+        "aws_cli": true,
+        "kube_config": true,
+        "prometheus": false
+      }
+    },
+    "simulation": {
+      "status": "success",
+      "details": "EKS environment simulated locally"
+    },
+    "configuration": {
+      "status": "failed",
+      "error": "AdaptiveRateLimiter.__init__() got an unexpected keyword argument 'config_override'"
+    },
+    "kubernetes": {
+      "status": "success",
+      "details": "Applied 19 resources",
+      "resources": [
+        {
+          "file": "local_configmap_20250610_173240.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250612_175504.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250610_175726.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250610_160945.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250610_160040.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250610_174916.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250610_155334.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250610_130003.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250612_223316.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250612_150044.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250612_175844.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250610_170238.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250610_154946.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250612_223919.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250610_152211.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250612_224028.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250610_174338.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250610_153724.yaml",
+          "status": "simulated",
+          "action": "apply"
+        },
+        {
+          "file": "local_configmap_20250610_153323.yaml",
+          "status": "simulated",
+          "action": "apply"
+        }
+      ]
+    },
+    "validation": {
+      "status": "success",
+      "details": "All validation checks passed",
+      "checks": {
+        "configmaps_exist": true,
+        "rate_limits_applied": true,
+        "monitoring_active": true,
+        "health_check": true
+      }
+    }
+  },
+  "success": false,
+  "artifacts": []
+}
