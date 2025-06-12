@@ -15,7 +15,7 @@ An intelligent, ML-powered adaptive rate limiting system for Istio service mesh 
 - **🌍 Environment-Aware Configuration**: Automatic environment detection with different partner/API configurations
 - **📊 Cache-Aware Rate Limiting**: Real cache hit ratio integration for accurate traffic calculations
 - **🎯 Partner-Specific Optimization**: Individual rate limits per partner/API endpoint combination
-- **🔄 Multi-Environment Support**: orp2, Testing, and Production with different trickster endpoints
+- **🔄 Multi-Environment Support**: environment, Testing, and Production with different trickster endpoints
 - **📈 v3 Formula**: Enhanced 2.5x average peak formula with cache considerations
 - **🛡️ Production-Ready**: Comprehensive monitoring, alerting, and rollback capabilities
 - **🐳 Docker Support**: Containerized deployment with production optimizations
@@ -50,8 +50,8 @@ graph TB
     I --> J[Istio Rate Limiter]
     
     subgraph "Multi-Environment"
-        K[orp2 Environment<br/>4 partners, 9 APIs]
-        L[Testing Environment<br/>orp2 trickster]
+        K[environment Environment<br/>4 partners, 9 APIs]
+        L[Testing Environment<br/>environment trickster]
         M[Production Environment<br/>5 partners, 11 APIs]
     end
     
@@ -93,10 +93,10 @@ cd TrendMaster-AI/adaptive_istio_rate_limit
 pip install -r requirements.txt
 
 # Set environment and run
-ENVIRONMENT=orp2 python scripts/main.py --show-env
+ENVIRONMENT=environment python scripts/main.py --show-env
 
 # Run analysis for specific partners
-ENVIRONMENT=orp2 python scripts/main.py --partners 313,439 --apis /api_v3/service/multirequest
+ENVIRONMENT=environment python scripts/main.py --partners 111,222 --apis /api_v3/service/multirequest
 
 # Deploy with Docker
 make docker-build
@@ -111,23 +111,23 @@ The system automatically detects environments and applies appropriate configurat
 
 | Environment | Partners | APIs | Trickster | Purpose |
 |-------------|----------|------|-----------|---------|
-| **orp2** | 4 (313, 439, 3079, 9020) | 9 | orp2.ott.kaltura.com | Local/Testing |
-| **testing** | 4 (313, 439, 3079, 9020) | 9 | orp2.ott.kaltura.com | Integration Tests |
-| **production** | 5 (101, 201, 301, 401, 501) | 11 | production.ott.kaltura.com | Live Production |
+| **environment** | 4 (111, 222, 333, 444) | 9 | environment.ott.example.com | Local/Testing |
+| **testing** | 4 (111, 222, 333, 444) | 9 | environment.ott.example.com | Integration Tests |
+| **production** | 5 (101, 201, 301, 401, 501) | 11 | production.ott.example.com | Live Production |
 
 ### Environment Detection
 
 The system automatically detects environment from these variables (in order):
 1. `ENVIRONMENT`
 2. `ENV` 
-3. `KALTURA_ENV`
+3. `example_ENV`
 4. `DEPLOYMENT_ENV`
 
 ```bash
 # Examples
-ENVIRONMENT=orp2 python scripts/main.py --show-env
+ENVIRONMENT=environment python scripts/main.py --show-env
 ENVIRONMENT=production python scripts/main.py --validate-only
-ENV=testing python scripts/main.py --partners 313
+ENV=testing python scripts/main.py --partners 111
 ```
 
 ### Configuration Structure
@@ -135,7 +135,7 @@ ENV=testing python scripts/main.py --partners 313
 ```yaml
 # config/config.yaml (sanitized - no sensitive data)
 PARTNER_CONFIGS:
-  orp2:
+  environment:
     partners: []  # Loaded from .local.config.yaml or ConfigMap
     apis: []      # Loaded from .local.config.yaml or ConfigMap
 
@@ -173,21 +173,21 @@ cp .local.config.yaml.template .local.config.yaml
 vim .local.config.yaml
 
 # 3. Run with local configuration
-ENVIRONMENT=orp2 python scripts/main.py --show-env
+ENVIRONMENT=environment python scripts/main.py --show-env
 ```
 
 #### Example `.local.config.yaml`
 ```yaml
 # .local.config.yaml (NOT tracked in git)
 PARTNER_CONFIGS:
-  orp2:
-    partners: [313, 439, 3079, 9020]
+  environment:
+    partners: [111, 222, 333, 444]
     apis:
       - /api_v3/service/multirequest
       - /api_v3/service/asset/action/list
       - /api_v3/service/baseEntry/action/list
       # ... actual API paths
-    prometheus_url: "https://trickster.orp2.ott.kaltura.com"
+    prometheus_url: "https://trickster.environment.ott.example.com"
 ```
 
 ## 📦 Installation
@@ -238,7 +238,7 @@ pip install -r requirements.txt
 make test
 
 # 4. Start local development
-ENVIRONMENT=orp2 python scripts/main.py --show-env
+ENVIRONMENT=environment python scripts/main.py --show-env
 ```
 
 ## 🎯 Usage
@@ -247,10 +247,10 @@ ENVIRONMENT=orp2 python scripts/main.py --show-env
 
 ```bash
 # Show environment information
-ENVIRONMENT=orp2 python scripts/main.py --show-env
+ENVIRONMENT=environment python scripts/main.py --show-env
 
 # Run analysis for specific partners
-python scripts/main.py --partners 313,439 --apis /api_v3/service/multirequest
+python scripts/main.py --partners 111,222 --apis /api_v3/service/multirequest
 
 # Validate configuration only
 python scripts/main.py --validate-only
@@ -268,7 +268,7 @@ python scripts/main.py --output-format yaml
 | Option | Description | Example |
 |--------|-------------|---------|
 | `--show-env` | Display environment configuration | `--show-env` |
-| `--partners` | Comma-separated partner IDs | `--partners 313,439` |
+| `--partners` | Comma-separated partner IDs | `--partners 111,222` |
 | `--apis` | Comma-separated API paths | `--apis /api_v3/service/multirequest` |
 | `--validate-only` | Only validate configuration | `--validate-only` |
 | `--verbose` | Enable verbose logging | `--verbose` |
@@ -278,15 +278,15 @@ python scripts/main.py --output-format yaml
 ### Environment Examples
 
 ```bash
-# orp2 environment (local/testing)
-ENVIRONMENT=orp2 python scripts/main.py --partners 313 --verbose
+# environment environment (local/testing)
+ENVIRONMENT=environment python scripts/main.py --partners 111 --verbose
 
 # Production environment
 ENVIRONMENT=production python scripts/main.py --validate-only
 
 # Testing with specific APIs
 ENVIRONMENT=testing python scripts/main.py \
-  --partners 313,439 \
+  --partners 111,222 \
   --apis "/api_v3/service/multirequest,/api_v3/service/asset/action/list"
 ```
 
@@ -327,7 +327,7 @@ final_rate = apply_bounds_and_rounding(final_rate)
 ### Example Calculation
 
 ```
-Partner 313, API /api_v3/service/multirequest:
+Partner 111, API /api_v3/service/multirequest:
 - Average Peak: 68.0 req/min (anomalies excluded)
 - Base Rate: 68.0 * 2.5 = 170 req/min
 - Cache Adjustment: 170 * 1.2 = 204 req/min
@@ -369,9 +369,9 @@ make monitor            # Start monitoring dashboard
 
 #### 1. Local Development
 ```bash
-ENVIRONMENT=orp2 make deploy-local
+ENVIRONMENT=environment make deploy-local
 ```
-- Uses orp2 environment configuration
+- Uses environment environment configuration
 - Mock data for development
 - Generates ConfigMaps in `output/` directory
 - Safe dry-run mode enabled
@@ -380,8 +380,8 @@ ENVIRONMENT=orp2 make deploy-local
 ```bash
 ENVIRONMENT=testing make deploy-testing
 ```
-- Uses orp2 trickster for testing
-- Same partners as local (313, 439, 3079, 9020)
+- Uses environment trickster for testing
+- Same partners as local (111, 222, 333, 444)
 - Integration tests included
 - Canary deployment strategy
 
@@ -428,7 +428,7 @@ docker-compose up -d
 
 ```bash
 # Check environment configuration
-ENVIRONMENT=orp2 python scripts/main.py --show-env
+ENVIRONMENT=environment python scripts/main.py --show-env
 
 # Validate configuration
 python scripts/main.py --validate-only
@@ -445,7 +445,7 @@ tail -f logs/adaptive_rate_limiter_*.log
 | Metric | Description | Environment Impact |
 |--------|-------------|-------------------|
 | `partners_processed` | Number of partners analyzed | Varies by environment |
-| `apis_processed` | Number of APIs analyzed | 9 (orp2) vs 11 (production) |
+| `apis_processed` | Number of APIs analyzed | 9 (environment) vs 11 (production) |
 | `confidence_score` | ML prediction confidence | Affected by data quality |
 | `cache_hit_ratio` | Real cache performance | Environment-specific |
 | `rate_limit_adjustments` | Formula adjustments applied | Environment safety margins |
@@ -456,14 +456,14 @@ The system generates comprehensive reports:
 
 ```markdown
 # Example Report Output
-Environment: orp2
-Partners: 4 configured (313, 439, 3079, 9020)
+Environment: environment
+Partners: 4 configured (111, 222, 333, 444)
 APIs: 9 configured
-Trickster: orp2.ott.kaltura.com
+Trickster: environment.ott.example.com
 Formula: v3 (2.5x average peaks)
 
 Results:
-- Partner 313: 500 req/min (confidence: 76.25%)
+- Partner 111: 500 req/min (confidence: 76.25%)
 - Applied v3 formula with cache adjustment
 - Safety margin applied for variable traffic
 ```
@@ -483,7 +483,7 @@ make test-environment       # Environment-specific tests
 make test-performance       # Performance tests
 
 # Test specific environments
-ENVIRONMENT=orp2 python -m pytest tests/test_environment_integration.py
+ENVIRONMENT=environment python -m pytest tests/test_environment_integration.py
 ENVIRONMENT=production python -m pytest tests/test_environment_integration.py
 ```
 
@@ -491,19 +491,19 @@ ENVIRONMENT=production python -m pytest tests/test_environment_integration.py
 
 ```python
 # tests/test_environment_integration.py
-def test_orp2_environment():
-    """Test orp2 environment configuration"""
-    config = ConfigManager(environment='orp2')
+def test_environment_environment():
+    """Test environment environment configuration"""
+    config = ConfigManager(environment='environment')
     assert len(config.get_partners()) == 4
-    assert '313' in config.get_partners()
-    assert config.get_prometheus_url().endswith('orp2.ott.kaltura.com')
+    assert '111' in config.get_partners()
+    assert config.get_prometheus_url().endswith('environment.ott.example.com')
 
 def test_production_environment():
     """Test production environment configuration"""
     config = ConfigManager(environment='production')
     assert len(config.get_partners()) == 5
     assert '101' in config.get_partners()
-    assert config.get_prometheus_url().endswith('production.ott.kaltura.com')
+    assert config.get_prometheus_url().endswith('production.ott.example.com')
 ```
 
 ## 🔧 API Reference
@@ -529,7 +529,7 @@ from scripts.core.enhanced_rate_calculator import EnhancedRateCalculator
 
 calculator = EnhancedRateCalculator(config, prometheus_client)
 result = calculator.calculate_rate_limit(
-    partner_id="313",
+    partner_id="111",
     path="/api_v3/service/multirequest",
     traffic_data=metrics_data,
     cache_metrics=cache_data
@@ -561,7 +561,7 @@ python scripts/main.py --help
 python scripts/main.py --show-env
 
 # Specific analysis
-python scripts/main.py --partners 313 --apis /api_v3/service/multirequest --verbose
+python scripts/main.py --partners 111 --apis /api_v3/service/multirequest --verbose
 ```
 
 ## 🛠️ Troubleshooting
@@ -571,10 +571,10 @@ python scripts/main.py --partners 313 --apis /api_v3/service/multirequest --verb
 #### 1. Environment Detection Issues
 ```bash
 # Check environment variables
-echo $ENVIRONMENT $ENV $KALTURA_ENV
+echo $ENVIRONMENT $ENV $example_ENV
 
 # Force specific environment
-ENVIRONMENT=orp2 python scripts/main.py --show-env
+ENVIRONMENT=environment python scripts/main.py --show-env
 
 # Validate configuration
 python scripts/main.py --validate-only
@@ -582,19 +582,19 @@ python scripts/main.py --validate-only
 
 #### 2. Prometheus Connection Issues
 ```bash
-# Test connectivity for orp2
+# Test connectivity for environment
 curl -H "Authorization: Bearer $PROMETHEUS_TOKEN" \
-     "https://trickster.orp2.ott.kaltura.com/api/v1/query?query=up"
+     "https://trickster.environment.ott.example.com/api/v1/query?query=up"
 
 # Test connectivity for production
 curl -H "Authorization: Bearer $PROMETHEUS_TOKEN" \
-     "https://trickster.production.ott.kaltura.com/api/v1/query?query=up"
+     "https://trickster.production.ott.example.com/api/v1/query?query=up"
 ```
 
 #### 3. Partner Configuration Issues
 ```bash
 # Check partner configuration
-ENVIRONMENT=orp2 python -c "
+ENVIRONMENT=environment python -c "
 from scripts.utils.config_manager import ConfigManager
 config = ConfigManager()
 print('Partners:', config.get_partners())
@@ -602,7 +602,7 @@ print('APIs:', len(config.get_apis()))
 "
 
 # Verify partner exists in environment
-python scripts/main.py --partners 313 --validate-only
+python scripts/main.py --partners 111 --validate-only
 ```
 
 #### 4. ConfigMap Generation Issues
@@ -622,10 +622,10 @@ kubectl get nodes
 ```bash
 # Enable debug logging
 export LOG_LEVEL=DEBUG
-ENVIRONMENT=orp2 python scripts/main.py --verbose
+ENVIRONMENT=environment python scripts/main.py --verbose
 
 # View detailed logs
-tail -f logs/adaptive_rate_limiter_orp2_*.log
+tail -f logs/adaptive_rate_limiter_environment_*.log
 
 # Check specific component logs
 grep "ConfigManager" logs/adaptive_rate_limiter_*.log
@@ -635,16 +635,16 @@ grep "v3 formula" logs/adaptive_rate_limiter_*.log
 ### Environment-Specific Debugging
 
 ```bash
-# Debug orp2 environment
-ENVIRONMENT=orp2 LOG_LEVEL=DEBUG python scripts/main.py \
-  --partners 313 --verbose
+# Debug environment environment
+ENVIRONMENT=environment LOG_LEVEL=DEBUG python scripts/main.py \
+  --partners 111 --verbose
 
 # Debug production environment  
 ENVIRONMENT=production LOG_LEVEL=DEBUG python scripts/main.py \
   --validate-only --verbose
 
 # Compare environments
-diff <(ENVIRONMENT=orp2 python scripts/main.py --show-env) \
+diff <(ENVIRONMENT=environment python scripts/main.py --show-env) \
      <(ENVIRONMENT=production python scripts/main.py --show-env)
 ```
 
@@ -662,7 +662,7 @@ diff <(ENVIRONMENT=orp2 python scripts/main.py --show-env) \
 ### Code Standards
 
 - **Python**: Follow PEP 8 style guide
-- **Testing**: Test all environments (orp2, testing, production)
+- **Testing**: Test all environments (environment, testing, production)
 - **Documentation**: Update docs for environment-specific changes
 - **Linting**: Use `black`, `flake8`, and `mypy`
 - **Environment Testing**: Validate changes across all environments
@@ -671,7 +671,7 @@ diff <(ENVIRONMENT=orp2 python scripts/main.py --show-env) \
 
 ```bash
 # Test all environments before submitting PR
-ENVIRONMENT=orp2 make test
+ENVIRONMENT=environment make test
 ENVIRONMENT=testing make test  
 ENVIRONMENT=production make test-validation
 
@@ -689,7 +689,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Istio Community**: Service mesh platform  
 - **Prometheus**: Monitoring and alerting
 - **Kubernetes**: Container orchestration
-- **Kaltura**: Multi-environment infrastructure support
+- **example**: Multi-environment infrastructure support
 
 ## 📞 Support
 
@@ -704,7 +704,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - ✅ Automatic environment detection from environment variables
 - ✅ Different partner/API configurations per environment
 - ✅ Environment-specific trickster endpoints
-- ✅ orp2 trickster for local/testing, production trickster for production
+- ✅ environment trickster for local/testing, production trickster for production
 
 ### Enhanced v3 Formula
 - ✅ 2.5x average peak multiplier (excluding anomalies)
