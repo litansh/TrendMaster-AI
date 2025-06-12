@@ -1,0 +1,93 @@
+apiVersion: v1
+data:
+  config.yaml: |
+    domain: global-ratelimit
+    descriptors:
+      - key: PARTNER
+        value: 313
+        descriptors:
+        - key: PATH
+          value: /api_v3/service/configurations/action/servebydevice
+          rate_limit:
+            unit: minute
+            requests_per_unit: 5000
+        - key: PATH
+          value: /api_v3/service/asset/action/getplaybackcontext
+          rate_limit:
+            unit: minute
+            requests_per_unit: 45000
+        - key: PATH
+          value: /api_v3/service/userassetrule/action/list
+          rate_limit:
+            unit: minute
+            requests_per_unit: 58000
+        - key: PATH
+          value: /api_v3/service/licensedurl/action/get
+          rate_limit:
+            unit: minute
+            requests_per_unit: 58000
+        - key: PATH
+          value: /api_v3/service/assethistory/action/list
+          rate_limit:
+            unit: minute
+            requests_per_unit: 35000
+      - key: PARTNER
+        value: 439
+        descriptors:
+        - key: PATH
+          value: /api_v3/service/multirequest
+          rate_limit:
+            unit: minute
+            requests_per_unit: 12000
+        - key: PATH
+          value: /api_v3/service/userassetrule/action/list
+          rate_limit:
+            unit: minute
+            requests_per_unit: 58000
+        - key: PATH
+          value: /api_v3/service/asset/action/list
+          rate_limit:
+            unit: minute
+            requests_per_unit: 70000
+        - key: PATH
+          value: /api_v3/service/assethistory/action/list
+          rate_limit:
+            unit: minute
+            requests_per_unit: 35000
+      - key: PARTNER
+        value: 3079
+        descriptors:
+        - key: PATH
+          value: /api_v3/service/ottuser/action/get
+          rate_limit:
+            unit: minute
+            requests_per_unit: 35000
+        - key: PATH
+          value: /api_v3/service/householdquota/action/get
+          rate_limit:
+            unit: minute
+            requests_per_unit: 35000
+        - key: PATH
+          value: /api_v3/service/asset/action/list
+          rate_limit:
+            unit: minute
+            requests_per_unit: 35000
+        - key: PATH
+          value: /api_v3/service/configurations/action/servebydevice
+          rate_limit:
+            unit: minute
+            requests_per_unit: 500
+      - key: PARTNER
+        value: 9020
+        descriptors:
+        - key: PATH
+          value: /api_v3/service/assethistory/action/list
+          rate_limit:
+            unit: minute
+            requests_per_unit: 35000
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: orp2-istio-ratelimit
+  name: ratelimit-config
+  namespace: istio-system
