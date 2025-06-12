@@ -55,6 +55,8 @@ Thumbs.db
 # Logs
 *.log
 logs/
+output/
+artifacts/
 
 # Temporary files
 *.tmp
