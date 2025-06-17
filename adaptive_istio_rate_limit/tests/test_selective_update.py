@@ -64,7 +64,7 @@ def main():
         }
     
     # Add some new combinations that shouldn't be added in selective mode
-    mock_rate_limits[('999', '/api_v3/service/test/action/new')] = {
+    mock_rate_limits[('999', '/api_v3/service/TEST_ENDPOINT/action/new')] = {
         'recommended_rate_limit': 1000,
         'confidence': {'confidence_level': 'medium'}
     }

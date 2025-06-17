@@ -4,7 +4,7 @@ data:
     domain: global-ratelimit
     descriptors:
       - key: PARTNER
-        value: 313
+        value: CUSTOMER_ID_1
         descriptors:
         - key: PATH
           value: /api_v3/service/configurations/action/servebydevice
@@ -12,7 +12,7 @@ data:
             unit: minute
             requests_per_unit: 5000
         - key: PATH
-          value: /api_v3/service/asset/action/getplaybackcontext
+          value: /api_v3/service/ENDPOINT_8playbackcontext
           rate_limit:
             unit: minute
             requests_per_unit: 45000
@@ -32,10 +32,10 @@ data:
             unit: minute
             requests_per_unit: 35000
       - key: PARTNER
-        value: 439
+        value: CUSTOMER_ID_3
         descriptors:
         - key: PATH
-          value: /api_v3/service/multirequest
+          value: /api_v3/service/ENDPOINT_5
           rate_limit:
             unit: minute
             requests_per_unit: 12000
@@ -45,7 +45,7 @@ data:
             unit: minute
             requests_per_unit: 58000
         - key: PATH
-          value: /api_v3/service/asset/action/list
+          value: /api_v3/service/ENDPOINT_2
           rate_limit:
             unit: minute
             requests_per_unit: 70000
@@ -55,10 +55,10 @@ data:
             unit: minute
             requests_per_unit: 35000
       - key: PARTNER
-        value: 3079
+        value: CUSTOMER_ID_4
         descriptors:
         - key: PATH
-          value: /api_v3/service/ottuser/action/get
+          value: /api_v3/service/ENDPOINT_7
           rate_limit:
             unit: minute
             requests_per_unit: 35000
@@ -68,7 +68,7 @@ data:
             unit: minute
             requests_per_unit: 35000
         - key: PATH
-          value: /api_v3/service/asset/action/list
+          value: /api_v3/service/ENDPOINT_2
           rate_limit:
             unit: minute
             requests_per_unit: 35000
@@ -78,7 +78,7 @@ data:
             unit: minute
             requests_per_unit: 500
       - key: PARTNER
-        value: 9020
+        value: CUSTOMER_ID_2
         descriptors:
         - key: PATH
           value: /api_v3/service/assethistory/action/list

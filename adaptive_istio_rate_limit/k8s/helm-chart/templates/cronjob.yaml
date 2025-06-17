@@ -1,0 +1,82 @@
+{{- if .Values.cronJob.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Values.app.name }}-scheduler
+  namespace: istio-system
+  labels:
+    app: {{ .Values.app.name }}
+    component: scheduler
+    version: {{ .Values.app.version }}
+spec:
+  schedule: {{ .Values.cronJob.schedule | quote }}
+  successfulJobsHistoryLimit: {{ .Values.cronJob.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.cronJob.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: {{ .Values.app.name }}
+            component: scheduler
+        spec:
+          serviceAccountName: {{ .Values.serviceAccount.name }}
+          securityContext:
+            runAsNonRoot: {{ .Values.securityContext.runAsNonRoot }}
+            runAsUser: {{ .Values.securityContext.runAsUser }}
+            fsGroup: {{ .Values.securityContext.fsGroup }}
+          containers:
+          - name: {{ .Values.app.name }}
+            image: {{ .Values.global.image_repo }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
+            imagePullPolicy: {{ .Values.image.pullPolicy }}
+            command: ["python", "scripts/main.py"]
+            env:
+            - name: KALTURA_ENV
+              value: {{ .Values.environment.name | quote }}
+            - name: PROMETHEUS_URL
+              value: {{ .Values.environment.prometheus_url | quote }}
+            - name: DRY_RUN
+              value: {{ .Values.environment.dry_run | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.environment.log_level | quote }}
+            - name: KUBECONFIG
+              value: "/var/run/secrets/kubernetes.io/serviceaccount"
+            - name: CONFIGMAP_NAME
+              value: {{ .Values.rateLimit.configMapName | quote }}
+            - name: CONFIGMAP_NAMESPACE
+              value: {{ .Values.rateLimit.namespace | quote }}
+            - name: CRON_MODE
+              value: "true"
+            resources:
+              requests:
+                memory: {{ .Values.deployment.resources.requests.memory }}
+                cpu: {{ .Values.deployment.resources.requests.cpu }}
+              limits:
+                memory: {{ .Values.deployment.resources.limits.memory }}
+                cpu: {{ .Values.deployment.resources.limits.cpu }}
+            volumeMounts:
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+            - name: output
+              mountPath: /app/output
+          volumes:
+          - name: config
+            configMap:
+              name: {{ .Values.configMap.name }}
+          - name: output
+            emptyDir: {}
+          restartPolicy: {{ .Values.cronJob.restartPolicy }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

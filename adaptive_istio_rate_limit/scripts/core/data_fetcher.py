@@ -101,37 +101,37 @@ class DataFetcher:
         self.logger.info(f"Generating mock Prometheus data for {days} days")
         
         # Define realistic partners and paths based on the example config
-        partners = ['313', '439', '3079', '9020']
+        partners = ['CUSTOMER_ID_1', 'CUSTOMER_ID_3', 'CUSTOMER_ID_4', 'CUSTOMER_ID_2']
         paths = [
             '/api_v3/service/configurations/action/servebydevice',
-            '/api_v3/service/asset/action/getplaybackcontext',
+            '/api_v3/service/ENDPOINT_8playbackcontext',
             '/api_v3/service/userassetrule/action/list',
             '/api_v3/service/licensedurl/action/get',
             '/api_v3/service/assethistory/action/list',
-            '/api_v3/service/multirequest',
-            '/api_v3/service/asset/action/list',
-            '/api_v3/service/ottuser/action/get',
+            '/api_v3/service/ENDPOINT_5',
+            '/api_v3/service/ENDPOINT_2',
+            '/api_v3/service/ENDPOINT_7',
             '/api_v3/service/householdquota/action/get'
         ]
         
         # Partner-specific traffic patterns
         partner_patterns = {
-            '313': {'base_traffic': 100, 'peak_multiplier': 3, 'variability': 0.3},
-            '439': {'base_traffic': 200, 'peak_multiplier': 4, 'variability': 0.4},
-            '3079': {'base_traffic': 80, 'peak_multiplier': 2, 'variability': 0.2},
-            '9020': {'base_traffic': 150, 'peak_multiplier': 3.5, 'variability': 0.35}
+            'CUSTOMER_ID_1': {'base_traffic': 100, 'peak_multiplier': 3, 'variability': 0.3},
+            'CUSTOMER_ID_3': {'base_traffic': 200, 'peak_multiplier': 4, 'variability': 0.4},
+            'CUSTOMER_ID_4': {'base_traffic': 80, 'peak_multiplier': 2, 'variability': 0.2},
+            'CUSTOMER_ID_2': {'base_traffic': 150, 'peak_multiplier': 3.5, 'variability': 0.35}
         }
         
         # Path-specific traffic patterns
         path_patterns = {
-            '/api_v3/service/asset/action/getplaybackcontext': {'multiplier': 2.0, 'prime_hours': [19, 20, 21, 22]},
-            '/api_v3/service/multirequest': {'multiplier': 1.5, 'prime_hours': [9, 10, 11, 14, 15, 16]},
+            '/api_v3/service/ENDPOINT_8playbackcontext': {'multiplier': 2.0, 'prime_hours': [19, 20, 21, 22]},
+            '/api_v3/service/ENDPOINT_5': {'multiplier': 1.5, 'prime_hours': [9, 10, 11, 14, 15, 16]},
             '/api_v3/service/configurations/action/servebydevice': {'multiplier': 0.8, 'prime_hours': [8, 9, 18, 19]},
             '/api_v3/service/userassetrule/action/list': {'multiplier': 1.2, 'prime_hours': [10, 11, 15, 16, 20, 21]},
             '/api_v3/service/licensedurl/action/get': {'multiplier': 1.8, 'prime_hours': [19, 20, 21, 22, 23]},
             '/api_v3/service/assethistory/action/list': {'multiplier': 1.0, 'prime_hours': [14, 15, 16, 17]},
-            '/api_v3/service/asset/action/list': {'multiplier': 1.3, 'prime_hours': [10, 11, 15, 16, 20, 21]},
-            '/api_v3/service/ottuser/action/get': {'multiplier': 0.9, 'prime_hours': [18, 19, 20, 21]},
+            '/api_v3/service/ENDPOINT_2': {'multiplier': 1.3, 'prime_hours': [10, 11, 15, 16, 20, 21]},
+            '/api_v3/service/ENDPOINT_7': {'multiplier': 0.9, 'prime_hours': [18, 19, 20, 21]},
             '/api_v3/service/householdquota/action/get': {'multiplier': 0.7, 'prime_hours': [9, 10, 18, 19]}
         }
         
@@ -140,9 +140,9 @@ class DataFetcher:
         for partner in partners:
             for path in paths:
                 # Skip some combinations to make it more realistic
-                if partner == '9020' and path not in ['/api_v3/service/assethistory/action/list']:
+                if partner == 'CUSTOMER_ID_2' and path not in ['/api_v3/service/assethistory/action/list']:
                     continue
-                if partner == '3079' and path in ['/api_v3/service/multirequest']:
+                if partner == 'CUSTOMER_ID_4' and path in ['/api_v3/service/ENDPOINT_5']:
                     continue
                 
                 # Generate time series data
@@ -153,7 +153,7 @@ class DataFetcher:
                 )
                 
                 # Get patterns for this partner/path combination
-                partner_pattern = partner_patterns.get(partner, partner_patterns['313'])
+                partner_pattern = partner_patterns.get(partner, partner_patterns['CUSTOMER_ID_1'])
                 path_pattern = path_patterns.get(path, {'multiplier': 1.0, 'prime_hours': [10, 11, 15, 16, 20, 21]})
                 
                 # Generate realistic traffic patterns

@@ -42,14 +42,14 @@ class TestEnvironmentIntegration:
                     'TRICKSTER_ENV': 'orp2'
                 },
                 'testing': {
-                    'PROMETHEUS_URL': 'https://trickster.orp2.ott.kaltura.com',
+                    'PROMETHEUS_URL': 'https://trickster.orp2.ott.YOUR_COMPANY.com',
                     'KUBERNETES_CONTEXT': 'eks-testing',
                     'DRY_RUN': True,
                     'ENV_NAME': 'orp2',
                     'TRICKSTER_ENV': 'orp2'
                 },
                 'production': {
-                    'PROMETHEUS_URL': 'https://trickster.production.ott.kaltura.com',
+                    'PROMETHEUS_URL': 'https://trickster.production.ott.YOUR_COMPANY.com',
                     'KUBERNETES_CONTEXT': 'eks-production',
                     'DRY_RUN': False,
                     'ENV_NAME': 'production',
@@ -58,22 +58,22 @@ class TestEnvironmentIntegration:
             },
             'PARTNER_CONFIGS': {
                 'orp2': {
-                    'partners': ['313', '439', '3079'],
+                    'partners': ['CUSTOMER_ID_1', 'CUSTOMER_ID_3', 'CUSTOMER_ID_4'],
                     'apis': [
-                        '/api_v3/service/asset/action/getplaybackcontext',
-                        '/api_v3/service/multirequest'
+                        '/api_v3/service/ENDPOINT_8playbackcontext',
+                        '/api_v3/service/ENDPOINT_5'
                     ],
                     'partner_multipliers': {
-                        '313': 1.0,
-                        '439': 0.9,
-                        '3079': 1.0
+                        'CUSTOMER_ID_1': 1.0,
+                        'CUSTOMER_ID_3': 0.9,
+                        'CUSTOMER_ID_4': 1.0
                     }
                 },
                 'production': {
                     'partners': ['101', '201', '301'],
                     'apis': [
-                        '/api_v3/service/asset/action/getplaybackcontext',
-                        '/api_v3/service/multirequest',
+                        '/api_v3/service/ENDPOINT_8playbackcontext',
+                        '/api_v3/service/ENDPOINT_5',
                         '/api_v3/service/session/action/start'
                     ],
                     'partner_multipliers': {
@@ -94,8 +94,8 @@ class TestEnvironmentIntegration:
                     'max_rate_limit': 50000
                 },
                 'PATH_MULTIPLIERS': {
-                    '/api_v3/service/multirequest': 1.5,
-                    '/api_v3/service/asset/action/getplaybackcontext': 1.1
+                    '/api_v3/service/ENDPOINT_5': 1.5,
+                    '/api_v3/service/ENDPOINT_8playbackcontext': 1.1
                 },
                 'EXCLUSIONS': {
                     'global_partners': ['test_partner'],
@@ -151,9 +151,9 @@ class TestEnvironmentIntegration:
                 config_manager = ConfigManager(config_file)
                 partner_config = config_manager.get_partner_config()
                 
-                assert '313' in partner_config['partners']
-                assert '439' in partner_config['partners']
-                assert partner_config['partner_multipliers']['439'] == 0.9
+                assert 'CUSTOMER_ID_1' in partner_config['partners']
+                assert 'CUSTOMER_ID_3' in partner_config['partners']
+                assert partner_config['partner_multipliers']['CUSTOMER_ID_3'] == 0.9
             
             # Test production environment
             with patch.dict(os.environ, {'ENVIRONMENT': 'production'}):
@@ -201,17 +201,17 @@ class TestEnvironmentIntegration:
                 
                 # Test partner configuration loading
                 partner_config = rate_calculator.partner_config
-                assert '313' in partner_config['partners']
-                assert partner_config['partner_multipliers']['313'] == 1.0
+                assert 'CUSTOMER_ID_1' in partner_config['partners']
+                assert partner_config['partner_multipliers']['CUSTOMER_ID_1'] == 1.0
                 
                 # Test partner/path validation
-                validation = rate_calculator.validate_partner_path('313', '/api_v3/service/multirequest')
+                validation = rate_calculator.validate_partner_path('CUSTOMER_ID_1', '/api_v3/service/ENDPOINT_5')
                 assert validation['valid'] == True
                 assert validation['partner_supported'] == True
                 assert validation['path_supported'] == True
                 
                 # Test invalid partner
-                validation = rate_calculator.validate_partner_path('999', '/api_v3/service/multirequest')
+                validation = rate_calculator.validate_partner_path('999', '/api_v3/service/ENDPOINT_5')
                 assert validation['valid'] == False
                 assert validation['partner_supported'] == False
         
@@ -230,11 +230,11 @@ class TestEnvironmentIntegration:
                 rate_calculator = EnhancedRateCalculator(config, None)
                 
                 # Validate orp2 partner
-                validation = rate_calculator.validate_partner_path('313', '/api_v3/service/multirequest')
+                validation = rate_calculator.validate_partner_path('CUSTOMER_ID_1', '/api_v3/service/ENDPOINT_5')
                 assert validation['valid'] == True
                 
                 # Production partner should not be valid in orp2
-                validation = rate_calculator.validate_partner_path('101', '/api_v3/service/multirequest')
+                validation = rate_calculator.validate_partner_path('101', '/api_v3/service/ENDPOINT_5')
                 assert validation['valid'] == False
             
             # Test production environment
@@ -244,11 +244,11 @@ class TestEnvironmentIntegration:
                 rate_calculator = EnhancedRateCalculator(config, None)
                 
                 # Validate production partner
-                validation = rate_calculator.validate_partner_path('101', '/api_v3/service/multirequest')
+                validation = rate_calculator.validate_partner_path('101', '/api_v3/service/ENDPOINT_5')
                 assert validation['valid'] == True
                 
                 # orp2 partner should not be valid in production
-                validation = rate_calculator.validate_partner_path('313', '/api_v3/service/multirequest')
+                validation = rate_calculator.validate_partner_path('CUSTOMER_ID_1', '/api_v3/service/ENDPOINT_5')
                 assert validation['valid'] == False
         
         finally:
@@ -303,14 +303,14 @@ class TestEnvironmentIntegration:
                 env_info = rate_limiter.env_info
                 assert env_info.name == 'orp2'
                 assert env_info.deployment_mode == 'local'
-                assert '313' in env_info.partners
+                assert 'CUSTOMER_ID_1' in env_info.partners
                 
                 # Test validation
                 validation = rate_limiter.validate_environment()
                 assert validation['valid'] == True
                 
                 # Test run with specific partners
-                results = rate_limiter.run(partners=['313'], apis=['/api_v3/service/multirequest'])
+                results = rate_limiter.run(partners=['CUSTOMER_ID_1'], apis=['/api_v3/service/ENDPOINT_5'])
                 
                 # Verify results structure
                 assert 'environment' in results

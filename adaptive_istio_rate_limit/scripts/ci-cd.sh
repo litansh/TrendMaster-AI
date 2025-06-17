@@ -104,12 +104,22 @@ run_sanity_tests() {
     info "Starting TrendMaster-AI sanity tests..."
     info "This is a critical gate - deployment will be blocked if tests fail"
     
-    # Run sanity tests with timeout
-    if timeout 300 python3 tests/test_sanity.py; then
+    # Run sanity tests with timeout and better error handling
+    info "Running sanity tests with 5-minute timeout..."
+    
+    # Set environment variable to use faster Prophet settings for CI/CD
+    export TRENDMASTER_CI_MODE=true
+    
+    if timeout 300 python3 tests/test_sanity.py 2>&1 | tee -a "${LOG_FILE}"; then
         success "🎉 ALL SANITY TESTS PASSED!"
         success "System functionality verified - proceeding with pipeline"
     else
-        error_exit "💥 SANITY TESTS FAILED! Blocking deployment pipeline."
+        exit_code=$?
+        if [ $exit_code -eq 124 ]; then
+            error_exit "💥 SANITY TESTS TIMED OUT after 5 minutes! This may indicate Prophet library issues."
+        else
+            error_exit "💥 SANITY TESTS FAILED! Exit code: $exit_code. Check log for details."
+        fi
     fi
 }
 

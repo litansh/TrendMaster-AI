@@ -1,0 +1,104 @@
+# TrendMaster-AI Adaptive Rate Limiting System
+# Default values for Helm chart - override in environment-specific values files
+
+# Global settings (will be overridden by parent chart)
+global:
+  image_repo: ""
+  account: ""
+  region: ""
+
+# Application configuration
+app:
+  name: trendmaster-ai
+  version: "3.0.0"
+
+# Image configuration
+image:
+  repository: trendmaster-ai-adaptive-ratelimit
+  tag: "3.0.0"
+  pullPolicy: Always
+
+# Service account
+serviceAccount:
+  create: true
+  name: trendmaster-ai
+  annotations: {}
+
+# RBAC
+rbac:
+  create: true
+
+# Deployment configuration
+deployment:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  
+  # Resource limits
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+# Environment configuration
+environment:
+  # Will be set by parent values file (values-orp2.yaml, values-prd1.yaml, etc.)
+  name: "production"
+  prometheus_url: ""
+  dry_run: false
+  log_level: "INFO"
+
+# ConfigMap settings
+configMap:
+  name: trendmaster-ai-config
+  
+# CronJob configuration for automated execution
+cronJob:
+  enabled: true
+  schedule: "0 */6 * * *"  # Every 6 hours
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  restartPolicy: OnFailure
+  
+# Monitoring
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    path: /metrics
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 2000
+
+# Node selector and tolerations
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Rate limiting integration
+rateLimit:
+  # Target ConfigMap to update
+  configMapName: "ratelimit-config"
+  namespace: "istio-system"
+  
+  # Backup settings
+  backup:
+    enabled: true
+    retention: 7  # days
+
+# Alerting configuration
+alerts:
+  enabled: true
+  slack:
+    webhook: ""
+    channel: "#alerts"

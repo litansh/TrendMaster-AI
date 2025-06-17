@@ -145,10 +145,10 @@ Dry Run: True
 
 ```bash
 # Run with specific partners
-ENVIRONMENT=testing python scripts/main.py --partners partner_313 --verbose
+ENVIRONMENT=testing python scripts/main.py --partners PARTNER_ID_1 --verbose
 
 # Run with specific APIs
-ENVIRONMENT=testing python scripts/main.py --apis /api/v3/service/configurations/action/servebydevice
+ENVIRONMENT=testing python scripts/main.py --apis /api/v3/service/ENDPOINT_1
 
 # Run full analysis
 ENVIRONMENT=testing python scripts/main.py
@@ -199,10 +199,10 @@ LOG_LEVEL=DEBUG python scripts/main.py --show-env
 
 ```bash
 # Analyze specific partner
-ENVIRONMENT=testing python scripts/main.py --partners partner_313
+ENVIRONMENT=testing python scripts/main.py --partners PARTNER_ID_1
 
 # Analyze specific API
-ENVIRONMENT=testing python scripts/main.py --apis /api/v3/service/configurations/action/servebydevice
+ENVIRONMENT=testing python scripts/main.py --apis /api/v3/service/ENDPOINT_1
 
 # Generate reports only
 ENVIRONMENT=testing python scripts/main.py --output-format json
@@ -259,7 +259,7 @@ data:
   config.yaml: |
     descriptors:
     - key: partner_id
-      value: "313"
+      value: "CUSTOMER_ID_1"
       rate_limit:
         requests_per_unit: 500
         unit: minute
@@ -278,7 +278,7 @@ Detailed analysis reports are generated in Markdown format:
 - Formula: v3 (2.5x average peaks)
 
 ## Results
-- Partner 313: 500 req/min (confidence: 76.25%)
+- Partner CUSTOMER_ID_1: 500 req/min (confidence: 76.25%)
 - Applied v3 formula with cache adjustment
 ```
 

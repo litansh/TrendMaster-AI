@@ -84,10 +84,11 @@ class EnhancedRateCalculator:
     - Environment variable-based configuration
     """
     
-    def __init__(self, config: Dict[str, Any], prometheus_client: Optional[Any] = None):
+    def __init__(self, config: Dict[str, Any], prometheus_client: Optional[Any] = None, config_manager: Optional[Any] = None):
         """Initialize the enhanced rate calculator with production optimizations."""
         self.config = config
         self.prometheus_client = prometheus_client
+        self.config_manager = config_manager
         
         # Initialize logger first
         self.logger = logging.getLogger(__name__)
@@ -98,8 +99,16 @@ class EnhancedRateCalculator:
         else:
             self.cache_collector = None
         
-        # Get environment from environment variables
-        self.current_environment = self._get_environment_from_env_vars()
+        # Get environment from environment variables or config manager
+        if self.config_manager:
+            self.current_environment = self.config_manager.get_current_environment()
+            self.deployment_mode = self.config_manager.get_deployment_mode()
+            self.partner_config = self.config_manager.get_partner_config()
+        else:
+            # Fallback to original method if no config manager provided
+            self.current_environment = self._get_environment_from_env_vars()
+            self.deployment_mode = self._determine_deployment_mode()
+            self.partner_config = self._load_partner_config()
         
         # Load rate calculation configuration
         self.rate_config = config.get('COMMON', {}).get('RATE_CALCULATION', {})
@@ -111,10 +120,8 @@ class EnhancedRateCalculator:
         self.max_rate_limit = self.rate_config.get('max_rate_limit', 50000)
         self.rounding_method = self.rate_config.get('rounding_method', 'nearest_hundred')
         
-        # Determine deployment mode and load environment-specific configurations
-        self.deployment_mode = self._determine_deployment_mode()
+        # Load environment-specific configurations
         self.env_config = config.get('ENVIRONMENTS', {}).get(self.deployment_mode, {})
-        self.partner_config = self._load_partner_config()
         
         # Apply deployment-specific overrides
         self._apply_deployment_overrides()
@@ -216,20 +223,39 @@ class EnhancedRateCalculator:
         # Determine which partner config to use based on current environment
         partner_configs = self.config.get('PARTNER_CONFIGS', {})
         
-        # For orp2 environment (local/testing), use orp2 config
-        if self.current_environment in ['orp2', 'local', 'development', 'testing', 'staging']:
+        # Prioritize direct match for current_environment in PARTNER_CONFIGS
+        if self.current_environment in partner_configs:
+            config_key = self.current_environment
+        # Fallback logic for specific environment categories if direct match failed
+        elif self.current_environment in ['orp2', 'local', 'development'] and 'orp2' in partner_configs:
             config_key = 'orp2'
-        else:
-            # For production and other environments, use production config
+            self.logger.info(f"Using 'orp2' partner config as fallback for environment '{self.current_environment}'")
+        elif self.current_environment in ['orp2', 'local', 'development'] and 'local' in partner_configs:
+            config_key = 'local'
+            self.logger.info(f"Using 'local' partner config as fallback for environment '{self.current_environment}'")
+        # If current_environment is 'testing' or 'staging', it should have been caught by the first 'if'
+        # if a 'testing' or 'staging' section exists in PARTNER_CONFIGS.
+        # If not, we proceed to a more general fallback.
+        elif 'production' in partner_configs: # General fallback to 'production' if it exists
             config_key = 'production'
+            self.logger.info(f"Using 'production' partner config as general fallback for environment '{self.current_environment}'")
+        else:
+            # Absolute fallback if no suitable key found in PARTNER_CONFIGS
+            self.logger.warning(f"No specific or standard fallback partner config found for '{self.current_environment}' in PARTNER_CONFIGS. Using hardcoded default.")
+            return {
+                'partners': ['CUSTOMER_ID_1', 'CUSTOMER_ID_3'],
+                'apis': ['/api_v3/service/ENDPOINT_5'],
+                'partner_multipliers': {'CUSTOMER_ID_1': 1.0, 'CUSTOMER_ID_3': 1.0}
+            }
         
+        # Check if the determined config_key (which should now be more accurate) exists
         if config_key not in partner_configs:
             self.logger.warning(f"No partner config found for '{config_key}', using default")
             # Return default configuration
             return {
-                'partners': ['313', '439'],
-                'apis': ['/api_v3/service/multirequest'],
-                'partner_multipliers': {'313': 1.0, '439': 1.0}
+                'partners': ['CUSTOMER_ID_1', 'CUSTOMER_ID_3'],
+                'apis': ['/api_v3/service/ENDPOINT_5'],
+                'partner_multipliers': {'CUSTOMER_ID_1': 1.0, 'CUSTOMER_ID_3': 1.0}
             }
         
         selected_config = partner_configs[config_key]

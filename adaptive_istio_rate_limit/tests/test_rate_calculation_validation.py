@@ -190,8 +190,8 @@ class RateCalculationValidationTests(unittest.TestCase):
         ]
         
         partner_config = self.config['PARTNER_CONFIGS'].get('testing', {})
-        test_partner = partner_config.get('partners', ['partner_313'])[0]
-        test_path = partner_config.get('apis', ['/api/v3/service/configurations/action/servebydevice'])[0]
+        test_partner = partner_config.get('partners', ['PARTNER_ID_1'])[0]
+        test_path = partner_config.get('apis', ['/api/v3/service/ENDPOINT_1'])[0]
         
         print(f"Testing rate calculation for: {test_partner}{test_path}")
         

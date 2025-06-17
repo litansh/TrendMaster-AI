@@ -1,0 +1,16 @@
+apiVersion: v2
+name: trendmaster-ai-adaptive-ratelimit
+description: TrendMaster-AI Adaptive Istio Rate Limiting System - ML-powered rate limit calculator
+type: application
+version: 3.0.0
+appVersion: "3.0.0"
+keywords:
+  - istio
+  - rate-limiting
+  - machine-learning
+  - prophet
+  - your_company
+home: https://github.com/your_company/TrendMaster-AI
+maintainers:
+  - name: YOUR_COMPANY DevOps Team
+    email: devops@YOUR_COMPANY.com

@@ -139,10 +139,9 @@ class ConfigMapManager:
         else:
             rate_limit_config = self._build_rate_limit_config(rate_limits)
         
-        # Update the ConfigMap data
+        # Update the ConfigMap data - only include the YAML string in data field
         config_yaml = yaml.dump(rate_limit_config, default_flow_style=False, indent=2)
         new_configmap['data']['config.yaml'] = config_yaml
-        new_configmap['parsed_config'] = rate_limit_config
         
         # Update metadata
         new_configmap['metadata']['labels']['updated_by'] = 'adaptive-rate-limiter'
@@ -173,7 +172,6 @@ class ConfigMapManager:
         Build rate limit configuration structure
         """
         config = {
-            'domain': 'global-ratelimit',
             'descriptors': []
         }
         
@@ -188,9 +186,16 @@ class ConfigMapManager:
             if partner not in partners_data:
                 partners_data[partner] = []
             
+            # Extract rate limit from the data structure
+            # rate_data can be either a dict with 'rate_limit' key or have 'recommended_rate_limit'
+            if isinstance(rate_data, dict):
+                rate_limit_value = rate_data.get('rate_limit', rate_data.get('recommended_rate_limit', 1000))
+            else:
+                rate_limit_value = 1000
+            
             partners_data[partner].append({
                 'path': path,
-                'rate_limit': rate_data.get('recommended_rate_limit', 1000),
+                'rate_limit': rate_limit_value,
                 'unit': 'minute'
             })
         
@@ -214,6 +219,12 @@ class ConfigMapManager:
                 partner_descriptor['descriptors'].append(path_descriptor)
             
             config['descriptors'].append(partner_descriptor)
+        
+        # Add domain at the end to ensure proper YAML ordering (domain first, then descriptors)
+        config = {
+            'domain': 'global-ratelimit',
+            'descriptors': config['descriptors']
+        }
         
         return config
     

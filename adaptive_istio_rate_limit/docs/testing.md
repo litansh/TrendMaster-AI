@@ -73,7 +73,7 @@ def test_2_data_fetcher_mock_data_generation(self):
 - **Validates**: Mock data generation, data structure integrity
 - **Key Metrics**: 
   - Generated 272,187 mock data points
-  - 4 unique partners: ['3079', '313', '439', '9020']
+  - 4 unique partners: ['CUSTOMER_ID_4', 'CUSTOMER_ID_1', 'CUSTOMER_ID_3', 'CUSTOMER_ID_2']
   - 9 unique API paths
 
 #### Test 3: Prophet Analyzer Basic Analysis
@@ -122,7 +122,7 @@ def test_1_configuration_loading(self):
 - ✅ **Status**: PASSED
 - **Environment**: testing
 - **Validates**: 
-  - 3 partners: ['partner_313', 'partner_439', 'partner_9020']
+  - 3 partners: ['PARTNER_ID_1', 'PARTNER_ID_2', 'PARTNER_ID_3']
   - 4 APIs configured
   - v3 formula configuration
 
@@ -154,8 +154,8 @@ def test_4_rate_calculation_with_multipliers(self):
     """Verify rate calculation with partner and path multipliers."""
 ```
 - ✅ **Status**: PASSED
-- **Partner**: partner_313
-- **API**: /api/v3/service/configurations/action/servebydevice
+- **Partner**: PARTNER_ID_1
+- **API**: /api/v3/service/ENDPOINT_1
 - **Scenarios**: 4 traffic scenarios (Low, Medium, High, Peak)
 - **Note**: 0 rate limits expected in test mode due to partner filtering
 
@@ -204,17 +204,17 @@ DRY_RUN=true               # Enable dry run mode
 ### Testing Partners and APIs
 ```yaml
 testing:
-  partners: ['partner_313', 'partner_439', 'partner_9020']
+  partners: ['PARTNER_ID_1', 'PARTNER_ID_2', 'PARTNER_ID_3']
   apis: [
-    '/api/v3/service/configurations/action/servebydevice',
-    '/api/v3/service/asset/action/list',
-    '/api/v3/service/ottuser/action/login',
-    '/api/v3/service/session/action/get'
+    '/api/v3/service/ENDPOINT_1',
+    '/api/v3/service/ENDPOINT_2',
+    '/api/v3/service/ENDPOINT_3',
+    '/api/v3/service/ENDPOINT_4'
   ]
   partner_multipliers:
-    partner_313: 1.5
-    partner_439: 1.0
-    partner_9020: 2.0
+    PARTNER_ID_1: 1.5
+    PARTNER_ID_2: 1.0
+    PARTNER_ID_3: 2.0
 ```
 
 ## 🎯 Test Execution Patterns

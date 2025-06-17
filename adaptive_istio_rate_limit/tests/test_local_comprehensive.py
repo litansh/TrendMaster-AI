@@ -18,7 +18,7 @@ def test_local_mode_comprehensive():
     print("=" * 60)
     
     # Initialize orchestrator in local mode
-    orchestrator = AdaptiveRateLimiter('../config/config.yaml')
+    orchestrator = AdaptiveRateLimiter('config/config.yaml')
     orchestrator.config_manager.deployment_mode = 'local'
     
     print(f"📍 Deployment Mode: {orchestrator.config_manager.deployment_mode}")

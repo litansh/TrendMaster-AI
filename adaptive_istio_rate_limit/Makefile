@@ -188,24 +188,24 @@ restore: ## Restore from backup (specify BACKUP_FILE)
 health-check: ## Perform system health check
 	@echo "$(GREEN)Performing health check...$(NC)"
 	@$(PYTHON) -c "
-import sys
-sys.path.append('scripts')
-from utils.config_manager import ConfigManager
-try:
-    cm = ConfigManager()
-    validation = cm.validate_configuration()
-    if validation['valid']:
-        print('✅ System health check passed')
-        sys.exit(0)
-    else:
-        print('❌ System health check failed')
-        for error in validation.get('errors', []):
-            print(f'  Error: {error}')
-        sys.exit(1)
-except Exception as e:
-    print(f'❌ Health check failed: {e}')
-    sys.exit(1)
-"
+	import sys
+	sys.path.append('scripts')
+	from utils.config_manager import ConfigManager
+	try:
+		cm = ConfigManager()
+		validation = cm.validate_configuration()
+		if validation['valid']:
+			print('✅ System health check passed')
+			sys.exit(0)
+		else:
+			print('❌ System health check failed')
+			for error in validation.get('errors', []):
+				print(f'  Error: {error}')
+			sys.exit(1)
+	except Exception as e:
+		print(f'❌ Health check failed: {e}')
+		sys.exit(1)
+	"
 
 update-deps: ## Update dependencies
 	@echo "$(GREEN)Updating dependencies...$(NC)"
@@ -234,15 +234,15 @@ docs: ## Generate documentation
 	@echo "$(GREEN)Generating documentation...$(NC)"
 	@mkdir -p docs/generated
 	@$(PYTHON) -c "
-import sys
-sys.path.append('scripts')
-from utils.config_manager import ConfigManager
-cm = ConfigManager()
-config = cm.get_config()
-import yaml
-with open('docs/generated/config_reference.yaml', 'w') as f:
-    yaml.dump(config, f, default_flow_style=False)
-"
+	import sys
+	sys.path.append('scripts')
+	from utils.config_manager import ConfigManager
+	cm = ConfigManager()
+	config = cm.get_config()
+	import yaml
+	with open('docs/generated/config_reference.yaml', 'w') as f:
+		yaml.dump(config, f, default_flow_style=False)
+	"
 	@echo "$(GREEN)Documentation generated in docs/generated/$(NC)"
 
 version: ## Show version information

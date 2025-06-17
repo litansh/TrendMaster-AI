@@ -50,7 +50,7 @@ ENVIRONMENTS:
     VERBOSE_LOGGING: true
     
   testing:
-    PROMETHEUS_URL: "https://trickster.orp2.ott.kaltura.com"
+    PROMETHEUS_URL: "https://trickster.orp2.ott.YOUR_COMPANY.com"
     KUBERNETES_CONTEXT: "eks-testing"
     CONFIGMAP_NAMESPACE: "istio-system"
     DRY_RUN: true
@@ -58,7 +58,7 @@ ENVIRONMENTS:
     USE_MOCK_DATA: false
     
   production:
-    PROMETHEUS_URL: "https://trickster.orp2.ott.kaltura.com"
+    PROMETHEUS_URL: "https://trickster.orp2.ott.YOUR_COMPANY.com"
     KUBERNETES_CONTEXT: "eks-production"
     CONFIGMAP_NAMESPACE: "istio-system"
     DRY_RUN: false

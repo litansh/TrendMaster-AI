@@ -1,0 +1,51 @@
+# Example configuration for values-orp2.yaml
+# Add these sections to your existing values-orp2.yaml file
+
+# TrendMaster-AI Adaptive Rate Limiting Configuration
+trendmaster_ai:
+  enabled: "true"
+  prometheus_url: "https://trickster.orp2.ott.YOUR_COMPANY.com"
+  dry_run: "false"  # Set to "true" for testing
+  log_level: "INFO"
+  schedule: "0 */6 * * *"  # Every 6 hours
+  
+  # Resource allocation
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+# Update existing rate_limit section to work with TrendMaster-AI
+rate_limit:
+  enabled: "true"
+  canary: "false"
+  retries:
+    attempts: 1500
+    perTryTimeout: 5s
+  
+  # TrendMaster-AI will manage these configurations automatically
+  # The system will read existing partners/APIs and apply ML-calculated limits
+  config:
+  - name: PARTNER
+    value: 478
+    config:
+    - name: PATH
+      value: "//api_v3/service/TEST_ENDPOINT/action/test"
+      unit: second
+      count: 1
+      shadow_mode: "false"
+  
+  # Additional partners will be managed by TrendMaster-AI
+  # based on existing ConfigMap analysis
+
+# Monitoring configuration for TrendMaster-AI
+monitoring:
+  trendmaster_ai:
+    enabled: "true"
+    alerts:
+      rate_limit_changes: "true"
+      ml_confidence_low: "true"
+      system_errors: "true"

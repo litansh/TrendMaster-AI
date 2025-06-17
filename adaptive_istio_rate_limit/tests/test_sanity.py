@@ -201,8 +201,8 @@ class SanityTests(unittest.TestCase):
                 clean_metrics=mock_data,
                 prime_time_data=mock_prime_data,
                 prophet_analysis=mock_analysis,
-                partner='313',  # Use existing partner from system
-                path='/api_v3/service/test'  # Use API path format
+                partner='CUSTOMER_ID_1',  # Use existing partner from system
+                path='/api_v3/service/TEST_ENDPOINT'  # Use API path format
             )
             
             # Handle both dict and RateCalculationResult object
@@ -263,33 +263,39 @@ class SanityTests(unittest.TestCase):
                 # Check if ConfigMap was generated in output directory
                 output_dir = 'output'
                 if os.path.exists(output_dir):
-                    config_files = [f for f in os.listdir(output_dir) if f.endswith('.yaml')]
+                    # Look specifically for ConfigMap files (not monitoring alerts)
+                    config_files = [f for f in os.listdir(output_dir) if f.endswith('.yaml') and 'configmap' in f]
                     report_files = [f for f in os.listdir(output_dir) if f.endswith('.md')]
-                    
+
                     # In mock mode with no partners, no ConfigMaps will be generated, which is expected
                     if len(config_files) == 0:
                         print("✅ No ConfigMaps generated (expected with no partners configured)")
                         print(f"✅ Generated {len(report_files)} report(s)")
                         return  # This is expected behavior
-                    
+
                     # Validate ConfigMap structure if files exist
                     if config_files:
+                        # Sort by timestamp and get the latest ConfigMap
+                        config_files.sort()
                         config_file = os.path.join(output_dir, config_files[-1])  # Get latest
                         with open(config_file, 'r') as f:
                             configmap = yaml.safe_load(f)
                         
                         # Verify ConfigMap structure
+                        self.assertIn('apiVersion', configmap)
                         self.assertEqual(configmap['apiVersion'], 'v1')
                         self.assertEqual(configmap['kind'], 'ConfigMap')
                         self.assertIn('metadata', configmap)
                         self.assertIn('data', configmap)
                         self.assertIn('config.yaml', configmap['data'])
-                        
+
                         # Verify rate limit data
                         rate_config = yaml.safe_load(configmap['data']['config.yaml'])
+                        self.assertIn('domain', rate_config)
+                        self.assertEqual(rate_config['domain'], 'global-ratelimit')
                         self.assertIn('descriptors', rate_config)
                         self.assertGreater(len(rate_config['descriptors']), 0)
-                        
+
                         # Check rate limit values are reasonable
                         for descriptor in rate_config['descriptors']:
                             if 'descriptors' in descriptor:

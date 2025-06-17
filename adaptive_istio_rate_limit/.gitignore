@@ -1,6 +1,19 @@
 # Local configuration files (contains sensitive data)
 .local.config.yaml
 .test.config.yaml
+.sensitive.config.yaml
+.production.config.yaml
+
+# Environment-specific sensitive files
+.env.local
+.env.production
+.env.staging
+.env.orp2
+.env.prd1
+
+# Backup configuration files
+*.config.backup
+config.backup.*
 
 # Python
 __pycache__/

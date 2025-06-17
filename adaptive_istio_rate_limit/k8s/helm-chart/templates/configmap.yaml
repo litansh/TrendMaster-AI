@@ -1,0 +1,158 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configMap.name }}
+  namespace: istio-system
+  labels:
+    app: {{ .Values.app.name }}
+    version: {{ .Values.app.version }}
+data:
+  config.yaml: |
+    # TrendMaster-AI Configuration for {{ .Values.environment.name }}
+    DEPLOYMENT:
+      MODE: {{ .Values.environment.name | quote }}
+      ENVIRONMENT: "production"
+
+    ENVIRONMENTS:
+      {{ .Values.environment.name }}:
+        PROMETHEUS_URL: {{ .Values.environment.prometheus_url | quote }}
+        KUBERNETES_CONFIG: "/var/run/secrets/kubernetes.io/serviceaccount"
+        KUBERNETES_CONTEXT: ""
+        CONFIGMAP_NAMESPACE: {{ .Values.rateLimit.namespace | quote }}
+        DRY_RUN: {{ .Values.environment.dry_run }}
+        PREVIEW_ONLY: false
+        USE_MOCK_DATA: false
+        GENERATE_REPORTS: true
+        ENV_NAME: {{ .Values.environment.name | quote }}
+        TRICKSTER_ENV: {{ .Values.environment.name | quote }}
+
+    COMMON:
+      ENV: {{ .Values.environment.name | quote }}
+      DAYS_TO_INSPECT: 7
+      LOG_LEVEL: {{ .Values.environment.log_level | quote }}
+      SHOW_ONLY_CONFIGURED: true
+      SELECTIVE_UPDATE: true
+      CONFIGMAP_NAME: {{ .Values.rateLimit.configMapName | quote }}
+      
+      # Enhanced Rate Calculation - v3 Formula
+      RATE_CALCULATION:
+        formula_version: "v3"
+        peak_multiplier: 2.5
+        cache_adjustment_factor: 1.2
+        safety_margin: 1.2
+        min_rate_limit: 100
+        max_rate_limit: 50000
+        rounding_method: "nearest_hundred"
+        
+        # Traffic pattern thresholds
+        spike_threshold_high: 8.0
+        spike_threshold_medium: 4.0
+        variability_threshold_high: 1.0
+        variability_threshold_medium: 0.6
+        
+        # Cache integration settings
+        enable_cache_adjustment: true
+        cache_hit_threshold: 0.1
+
+      # Prophet Configuration
+      PROPHET_CONFIG:
+        enabled: true
+        seasonality_mode: 'multiplicative'
+        yearly_seasonality: false
+        weekly_seasonality: true
+        daily_seasonality: true
+        changepoint_prior_scale: 0.05
+        uncertainty_samples: 500
+        interval_width: 0.90
+        mcmc_samples: 0
+
+      # Prime Time Detection
+      PRIME_TIME_CONFIG:
+        detection_method: 'dynamic'
+        percentile_threshold: 75
+        min_duration: 60
+        consistency_check: true
+        min_traffic_threshold: 50
+        max_prime_periods: 3
+
+      # Anomaly Detection
+      ANOMALY_CONFIG:
+        methods: ['prophet', 'statistical']
+        sensitivity: 'medium'
+        exclusion_confidence: 0.90
+        spike_threshold_multiplier: 4.0
+        contextual_window: '12h'
+        iqr_multiplier: 1.5
+        zscore_threshold: 3.0
+        max_anomalies_percent: 15
+
+      # Cache Metrics Configuration
+      CACHE_CONFIG:
+        enabled: true
+        metrics_query: 'sum(increase(service_nginx_request_time_s_count{path=~"$api", partner=~"$partner", cache_status!=""}[1m])) by (path, cache_status)'
+        cache_statuses: ['HIT', 'MISS', 'BYPASS', 'EXPIRED', 'STALE']
+        default_hit_ratio: 0.15
+        timeout: 30
+
+      # Monitoring and Alerting
+      MONITORING:
+        enabled: {{ .Values.monitoring.enabled }}
+        alert_threshold: 0.25
+        metrics_retention: 30
+        {{- if .Values.alerts.slack.webhook }}
+        slack_webhook: {{ .Values.alerts.slack.webhook | quote }}
+        {{- end }}
+        
+        health_check:
+          enabled: true
+          interval: 300
+          timeout: 30
+          endpoints:
+            - "/health"
+            - "/metrics"
+            - "/ready"
+
+      # Performance Configuration
+      PERFORMANCE:
+        max_concurrent_requests: 10
+        request_timeout: 60
+        connection_pool_size: 20
+        max_retries: 3
+        backoff_factor: 1.5
+        
+        memory_limit: {{ .Values.deployment.resources.limits.memory | quote }}
+        cpu_limit: {{ .Values.deployment.resources.limits.cpu | quote }}
+        memory_request: {{ .Values.deployment.resources.requests.memory | quote }}
+        cpu_request: {{ .Values.deployment.resources.requests.cpu | quote }}
+
+      # Logging Configuration
+      LOGGING:
+        level: {{ .Values.environment.log_level | quote }}
+        format: "json"
+        output: "stdout"
+        file_path: "/var/log/adaptive-rate-limiter.log"
+        max_file_size: "100MB"
+        max_files: 5
+        
+        include_fields:
+          - "timestamp"
+          - "level"
+          - "message"
+          - "partner"
+          - "path"
+          - "environment"
+          - "calculation_method"
+
+      # Security Configuration
+      SECURITY:
+        enable_tls: true
+        service_account: {{ .Values.serviceAccount.name | quote }}
+        cluster_role: "{{ .Values.app.name }}-role"
+
+    # Deployment-Specific Overrides
+    DEPLOYMENT_OVERRIDES:
+      {{ .Values.environment.name }}:
+        COMMON:
+          LOG_LEVEL: {{ .Values.environment.log_level | quote }}
+          MONITORING:
+            alert_threshold: 0.30

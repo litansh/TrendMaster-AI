@@ -53,7 +53,7 @@ Returns configured partners for current environment.
 
 ```python
 partners = config_manager.get_partners()
-# ['partner_313', 'partner_439', 'partner_9020']
+# ['PARTNER_ID_1', 'PARTNER_ID_2', 'PARTNER_ID_3']
 ```
 
 ##### `get_apis() -> List[str]`
@@ -61,7 +61,7 @@ Returns configured APIs for current environment.
 
 ```python
 apis = config_manager.get_apis()
-# ['/api/v3/service/configurations/action/servebydevice', ...]
+# ['/api/v3/service/ENDPOINT_1', ...]
 ```
 
 ### DataFetcher
@@ -127,8 +127,8 @@ Performs comprehensive traffic analysis.
 ```python
 analysis = prophet_analyzer.analyze_traffic_patterns(
     data=traffic_data,
-    partner='partner_313',
-    path='/api/v3/service/configurations/action/servebydevice'
+    partner='PARTNER_ID_1',
+    path='/api/v3/service/ENDPOINT_1'
 )
 ```
 
@@ -184,8 +184,8 @@ result = rate_calculator.calculate_optimal_rate_limit(
     clean_metrics=metrics_df,
     prime_time_data=prime_df,
     prophet_analysis=analysis_result,
-    partner='partner_313',
-    path='/api/v3/service/configurations/action/servebydevice',
+    partner='PARTNER_ID_1',
+    path='/api/v3/service/ENDPOINT_1',
     cache_metrics=cache_data
 )
 ```
@@ -249,8 +249,8 @@ python scripts/main.py [OPTIONS]
 | Option | Description | Example |
 |--------|-------------|---------|
 | `--show-env` | Display environment information | `--show-env` |
-| `--partners` | Comma-separated partner IDs | `--partners partner_313,partner_439` |
-| `--apis` | Comma-separated API paths | `--apis /api/v3/service/multirequest` |
+| `--partners` | Comma-separated partner IDs | `--partners PARTNER_ID_1,PARTNER_ID_2` |
+| `--apis` | Comma-separated API paths | `--apis /api/v3/service/ENDPOINT_5` |
 | `--validate-only` | Only validate configuration | `--validate-only` |
 | `--verbose` | Enable verbose logging | `--verbose` |
 | `--output-format` | Output format (json/yaml) | `--output-format json` |
@@ -273,7 +273,7 @@ python scripts/main.py [OPTIONS]
 ENVIRONMENT=testing python scripts/main.py --show-env
 
 # Analyze specific partners
-ENVIRONMENT=testing python scripts/main.py --partners partner_313 --verbose
+ENVIRONMENT=testing python scripts/main.py --partners PARTNER_ID_1 --verbose
 
 # Validate configuration
 python scripts/main.py --validate-only
@@ -302,10 +302,10 @@ ENVIRONMENTS:
 
 PARTNER_CONFIGS:
   testing:
-    partners: ['partner_313', 'partner_439', 'partner_9020']
-    apis: ['/api/v3/service/configurations/action/servebydevice']
+    partners: ['PARTNER_ID_1', 'PARTNER_ID_2', 'PARTNER_ID_3']
+    apis: ['/api/v3/service/ENDPOINT_1']
     partner_multipliers:
-      partner_313: 1.5
+      PARTNER_ID_1: 1.5
 
 COMMON:
   RATE_CALCULATION:
@@ -321,8 +321,8 @@ COMMON:
 ```python
 # DataFrame structure for metrics
 {
-    'partner': ['313', '313', '439'],
-    'path': ['/api/v3/service/multirequest', '/api/v3/service/multirequest', '/api/v3/service/asset/action/list'],
+    'partner': ['CUSTOMER_ID_1', 'CUSTOMER_ID_1', 'CUSTOMER_ID_3'],
+    'path': ['/api/v3/service/ENDPOINT_5', '/api/v3/service/ENDPOINT_5', '/api/v3/service/ENDPOINT_2'],
     'timestamp': ['2025-06-13T01:00:00', '2025-06-13T01:01:00', '2025-06-13T01:00:00'],
     'value': [150.5, 142.3, 89.7]
 }
@@ -413,14 +413,14 @@ def calculate_v3_rate_limit(metrics_data, analysis_result, partner, path):
 ```python
 # Partner-specific multipliers
 partner_multipliers = {
-    'partner_313': 1.5,  # High-traffic partner
-    'partner_439': 1.0,  # Standard partner
-    'partner_9020': 2.0  # Premium partner
+    'PARTNER_ID_1': 1.5,  # High-traffic partner
+    'PARTNER_ID_2': 1.0,  # Standard partner
+    'PARTNER_ID_3': 2.0  # Premium partner
 }
 
 # Path-specific multipliers
 path_multipliers = {
-    '/api/v3/service/multirequest': 3.0,    # High-capacity endpoint
+    '/api/v3/service/ENDPOINT_5': 3.0,    # High-capacity endpoint
     '/api/v1/user/login': 0.5,              # Security-sensitive endpoint
     '/api/v2/analytics': 1.5                # Analytics endpoint
 }
@@ -490,8 +490,8 @@ logger.critical("Critical error")
 ```python
 # Include context in logs
 logger.info("Rate calculation completed", extra={
-    'partner': 'partner_313',
-    'path': '/api/v3/service/multirequest',
+    'partner': 'PARTNER_ID_1',
+    'path': '/api/v3/service/ENDPOINT_5',
     'rate_limit': 500,
     'confidence': 0.85
 })

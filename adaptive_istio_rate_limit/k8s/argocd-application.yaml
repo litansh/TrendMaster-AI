@@ -1,0 +1,52 @@
+# ArgoCD Application Template for TrendMaster-AI
+# This template should be added to your be-argo/templates/ directory
+{{- if eq (.Values.trendmaster_ai.enabled | default "false") "true" }}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ .Values.cluster_name }}-trendmaster-ai
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: istio-system
+    server: {{ .Values.destination_cluster }}
+  project: {{ .Values.cluster_name }}
+  {{- if eq (.Values.features.auto_sync | default "false") "yes" }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false
+  {{- end }}
+  source:
+    path: TrendMaster-AI/adaptive_istio_rate_limit/k8s/helm-chart
+    repoURL: https://github.com/your_company/TrendMaster-AI
+    targetRevision: {{ .Values.branch }}
+    helm:
+      valueFiles:
+        - ../../values-{{ .Values.cluster_name }}.yaml
+      values: |
+        global:
+          image_repo: {{ .Values.global.image_repo }}
+          account: {{ .Values.global.account }}
+          region: {{ .Values.global.region }}
+        environment:
+          name: {{ .Values.cluster_name }}
+          prometheus_url: {{ .Values.trendmaster_ai.prometheus_url | default "https://trickster.orp2.ott.YOUR_COMPANY.com" }}
+          dry_run: {{ .Values.trendmaster_ai.dry_run | default "false" }}
+          log_level: {{ .Values.trendmaster_ai.log_level | default "INFO" }}
+        {{- if .Values.trendmaster_ai.schedule }}
+        cronJob:
+          schedule: {{ .Values.trendmaster_ai.schedule | quote }}
+        {{- end }}
+        {{- if .Values.trendmaster_ai.resources }}
+        deployment:
+          resources:
+            {{- toYaml .Values.trendmaster_ai.resources | nindent 12 }}
+        {{- end }}
+        alerts:
+          slack:
+            webhook: {{ .Values.slackUrl | default "" }}
+            channel: {{ .Values.slackChannel | default "#alerts" }}
+{{- end }}

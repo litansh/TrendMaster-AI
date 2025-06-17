@@ -69,8 +69,8 @@ def main():
         {
             "ENVIRONMENT": "production",
             "PARTNERS": "100,200,300,400,500",
-            "APIS": "/api_v3/service/multirequest,/api_v3/service/asset/action/list,/api_v3/service/user/action/get",
-            "PROMETHEUS_URL": "https://trickster.production.ott.kaltura.com",
+            "APIS": "/api_v3/service/ENDPOINT_5,/api_v3/service/ENDPOINT_2,/api_v3/service/user/action/get",
+            "PROMETHEUS_URL": "https://trickster.production.ott.YOUR_COMPANY.com",
             "TRICKSTER_ENV": "production",
             "DRY_RUN": "false"
         },
@@ -93,7 +93,7 @@ def main():
         "Production - No partner/API env vars (full fallback)",
         {
             "ENVIRONMENT": "production",
-            "PROMETHEUS_URL": "https://trickster.production.ott.kaltura.com"
+            "PROMETHEUS_URL": "https://trickster.production.ott.YOUR_COMPANY.com"
             # No PARTNERS or APIS env vars - should use config.yaml production defaults
         },
         ["--show-env"]

@@ -147,8 +147,8 @@ COMMON:
     conditional_exclusions:
       low_traffic: ["partner_123"]
       partner_paths:
-        "313": ["/internal/debug"]
-        "439": ["/admin/test"]
+        "CUSTOMER_ID_1": ["/internal/debug"]
+        "CUSTOMER_ID_3": ["/admin/test"]
 
   # Prophet Configuration
   PROPHET_CONFIG:
@@ -360,10 +360,10 @@ class LocalEnvironmentHandler:
         import numpy as np
         
         # Generate realistic mock data
-        partners = ['313', '439', '3079']
+        partners = ['CUSTOMER_ID_1', 'CUSTOMER_ID_3', 'CUSTOMER_ID_4']
         paths = [
             '/api_v3/service/configurations/action/servebydevice',
-            '/api_v3/service/asset/action/getplaybackcontext',
+            '/api_v3/service/ENDPOINT_8playbackcontext',
             '/api_v3/service/userassetrule/action/list'
         ]
         

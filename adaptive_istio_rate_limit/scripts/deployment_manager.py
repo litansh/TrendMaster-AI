@@ -295,7 +295,7 @@ class DeploymentManager:
                 }
             },
             'data': {
-                'config.yaml': 'domain: trendmaster-ai\ndescriptors:\n  - key: partner_id\n    value: "313"\n    rate_limit:\n      unit: minute\n      requests_per_unit: 1000'
+                'config.yaml': 'domain: trendmaster-ai\ndescriptors:\n  - key: partner_id\n    value: "CUSTOMER_ID_1"\n    rate_limit:\n      unit: minute\n      requests_per_unit: 1000'
             }
         }
         

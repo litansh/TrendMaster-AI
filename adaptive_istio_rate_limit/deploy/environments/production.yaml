@@ -20,7 +20,7 @@ data:
   kubernetes_namespace: "istio-system"
   
   # Prometheus Configuration
-  prometheus_url: "https://trickster.orp2.ott.kaltura.com"
+  prometheus_url: "https://trickster.orp2.ott.YOUR_COMPANY.com"
   use_mock_data: "false"
   
   # Production Settings
@@ -30,7 +30,7 @@ data:
   verbose_logging: "false"  # Reduced logging for production
   
   # EKS Configuration
-  cluster_name: "kaltura-ott-production"
+  cluster_name: "your_company-ott-production"
   region: "us-east-1"
   
   # Rate Limiting Configuration
@@ -203,7 +203,7 @@ spec:
             fieldRef:
               fieldPath: spec.nodeName
         - name: CLUSTER_NAME
-          value: "kaltura-ott-production"
+          value: "your_company-ott-production"
         envFrom:
         - configMapRef:
             name: trendmaster-ai-production-config

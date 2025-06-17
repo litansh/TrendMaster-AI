@@ -122,7 +122,7 @@ class AdaptiveRateLimiter:
                 self.logger.info("Using mock data mode - Prometheus client not initialized")
             
             # Initialize core analyzers
-            self.rate_calculator = EnhancedRateCalculator(self.config, self.prometheus_client)
+            self.rate_calculator = EnhancedRateCalculator(self.config, self.prometheus_client, self.config_manager)
             self.data_fetcher = DataFetcher(self.config)
             self.prophet_analyzer = ProphetAnalyzer(self.config)
             self.prime_time_detector = PrimeTimeDetector(self.config)
@@ -410,22 +410,38 @@ class AdaptiveRateLimiter:
         try:
             configmaps = []
             
+            # Convert rate_limits format to the expected format for ConfigMapManager
+            # rate_limits is {partner: {api: result_dict}}
+            # ConfigMapManager expects {(partner, api): result_dict}
+            formatted_rate_limits = {}
+            for partner, apis in rate_limits.items():
+                for api, result in apis.items():
+                    formatted_rate_limits[(partner, api)] = result
+            
             # Generate ConfigMap for each partner or combined
             if self.config.get('COMMON', {}).get('SEPARATE_CONFIGMAPS_PER_PARTNER', False):
                 # Separate ConfigMap per partner
                 for partner, apis in rate_limits.items():
+                    partner_formatted = {}
+                    for api, result in apis.items():
+                        partner_formatted[(partner, api)] = result
+                    
                     configmap = self.configmap_manager.create_rate_limit_configmap(
-                        partner_data={partner: apis},
-                        environment=self.current_environment
+                        rate_limits=partner_formatted,
+                        configmap_name=f"ratelimit-config-{partner}",
+                        env=self.current_environment
                     )
-                    configmaps.append(configmap)
+                    if configmap:
+                        configmaps.append(configmap)
             else:
                 # Single combined ConfigMap
                 configmap = self.configmap_manager.create_rate_limit_configmap(
-                    partner_data=rate_limits,
-                    environment=self.current_environment
+                    rate_limits=formatted_rate_limits,
+                    configmap_name="ratelimit-config",
+                    env=self.current_environment
                 )
-                configmaps.append(configmap)
+                if configmap:
+                    configmaps.append(configmap)
             
             # Save ConfigMaps to output directory
             output_dir = project_root / "output"
@@ -440,7 +456,8 @@ class AdaptiveRateLimiter:
                 
                 configmap_path = output_dir / filename
                 with open(configmap_path, 'w') as f:
-                    yaml.dump(configmap, f, default_flow_style=False)
+                    # Custom YAML formatting for proper ConfigMap structure
+                    self._write_configmap_yaml(configmap, f)
                 
                 self.logger.info(f"💾 ConfigMap saved: {configmap_path}")
             
@@ -449,6 +466,72 @@ class AdaptiveRateLimiter:
         except Exception as e:
             self.logger.error(f"ConfigMap generation failed: {e}")
             return []
+    
+    def _write_configmap_yaml(self, configmap: Dict[str, Any], file_handle) -> None:
+        """Write ConfigMap with proper YAML formatting for config.yaml field"""
+        # Write the basic structure
+        file_handle.write("apiVersion: v1\n")
+        file_handle.write("kind: ConfigMap\n")
+        file_handle.write("metadata:\n")
+        
+        # Write metadata
+        metadata = configmap.get('metadata', {})
+        if 'name' in metadata:
+            file_handle.write(f"  name: {metadata['name']}\n")
+        if 'namespace' in metadata:
+            file_handle.write(f"  namespace: {metadata['namespace']}\n")
+        
+        # Write labels
+        labels = metadata.get('labels', {})
+        if labels:
+            file_handle.write("  labels:\n")
+            for key, value in labels.items():
+                file_handle.write(f"    {key}: {value}\n")
+        
+        # Write data section with proper formatting for config.yaml
+        file_handle.write("data:\n")
+        data = configmap.get('data', {})
+        
+        for key, value in data.items():
+            if key == 'config.yaml':
+                # Use literal block scalar for config.yaml content
+                file_handle.write(f"  {key}: |\n")
+                
+                # Parse the YAML content to reorder it properly
+                import yaml
+                try:
+                    config_data = yaml.safe_load(value)
+                    # Ensure domain comes first, then descriptors
+                    ordered_content = f"    domain: {config_data.get('domain', 'global-ratelimit')}\n"
+                    ordered_content += "    descriptors:\n"
+                    
+                    # Add descriptors
+                    for desc in config_data.get('descriptors', []):
+                        ordered_content += f"    - key: {desc.get('key', '')}\n"
+                        ordered_content += f"      value: '{desc.get('value', '')}'\n"
+                        ordered_content += "      descriptors:\n"
+                        
+                        for sub_desc in desc.get('descriptors', []):
+                            ordered_content += f"      - key: {sub_desc.get('key', '')}\n"
+                            ordered_content += f"        value: {sub_desc.get('value', '')}\n"
+                            if 'rate_limit' in sub_desc:
+                                rate_limit = sub_desc['rate_limit']
+                                ordered_content += "        rate_limit:\n"
+                                ordered_content += f"          unit: {rate_limit.get('unit', 'minute')}\n"
+                                ordered_content += f"          requests_per_unit: {rate_limit.get('requests_per_unit', 1000)}\n"
+                    
+                    file_handle.write(ordered_content)
+                    
+                except Exception as e:
+                    # Fallback to original method if parsing fails
+                    for line in value.split('\n'):
+                        if line.strip():
+                            file_handle.write(f"    {line}\n")
+                        else:
+                            file_handle.write("\n")
+            else:
+                # Regular string value
+                file_handle.write(f"  {key}: {value}\n")
     
     def _generate_analysis_report(self, results: Dict[str, Any]) -> Path:
         """Generate comprehensive analysis report"""
@@ -580,7 +663,7 @@ Examples:
   python main.py --config /path/to/config.yaml
   
   # Run with specific partners and APIs
-  python main.py --partners 313,439 --apis /api_v3/service/multirequest
+  python main.py --partners CUSTOMER_ID_1,CUSTOMER_ID_3 --apis /api_v3/service/ENDPOINT_5
   
   # Validate configuration only
   python main.py --validate-only

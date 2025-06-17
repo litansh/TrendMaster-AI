@@ -15,7 +15,7 @@ data:
 
     ENVIRONMENTS:
       production:
-        PROMETHEUS_URL: "https://trickster.orp2.ott.kaltura.com"
+        PROMETHEUS_URL: "https://trickster.orp2.ott.YOUR_COMPANY.com"
         KUBERNETES_CONFIG: "/root/.kube/config"
         KUBERNETES_CONTEXT: "eks-production"
         CONFIGMAP_NAMESPACE: "istio-system"

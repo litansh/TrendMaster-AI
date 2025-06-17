@@ -1,0 +1,64 @@
+# Example configuration for values-prd1.yaml
+# Add these sections to your existing values-prd1.yaml file
+
+# TrendMaster-AI Adaptive Rate Limiting Configuration
+trendmaster_ai:
+  enabled: "true"
+  prometheus_url: "https://trickster.prd1.ott.YOUR_COMPANY.com"
+  dry_run: "false"  # Set to "true" for initial testing
+  log_level: "INFO"
+  schedule: "0 */4 * * *"  # Every 4 hours for production (more frequent)
+  
+  # Higher resource allocation for production
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+# Update existing rate_limit section to work with TrendMaster-AI
+rate_limit:
+  enabled: "true"
+  canary: "false"
+  retries:
+    attempts: 2000  # Higher for production
+    perTryTimeout: 5s
+  
+  # TrendMaster-AI will manage these configurations automatically
+  # The system will read existing partners/APIs and apply ML-calculated limits
+  config:
+  - name: PARTNER
+    value: 478
+    config:
+    - name: PATH
+      value: "//api_v3/service/TEST_ENDPOINT/action/test"
+      unit: second
+      count: 1
+      shadow_mode: "false"
+  
+  # Production partners will be managed by TrendMaster-AI
+  # with enhanced monitoring and alerting
+
+# Enhanced monitoring configuration for production
+monitoring:
+  trendmaster_ai:
+    enabled: "true"
+    alerts:
+      rate_limit_changes: "true"
+      ml_confidence_low: "true"
+      system_errors: "true"
+      performance_degradation: "true"
+      high_traffic_anomalies: "true"
+    
+    # Production-specific alerting
+    slack_channels:
+      - "#alerts"
+      - "#platform-team"
+    
+    # Enhanced metrics collection
+    metrics:
+      detailed_logging: "true"
+      performance_tracking: "true"
+      ml_model_accuracy: "true"

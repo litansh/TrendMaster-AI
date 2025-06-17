@@ -16,11 +16,11 @@ def demo_selective_update():
         'descriptors': [
             {
                 'key': 'PARTNER',
-                'value': '313',
+                'value': 'CUSTOMER_ID_1',
                 'descriptors': [
                     {
                         'key': 'PATH',
-                        'value': '/api_v3/service/asset/action/list',
+                        'value': '/api_v3/service/ENDPOINT_2',
                         'rate_limit': {
                             'unit': 'minute',
                             'requests_per_unit': 1000
@@ -28,7 +28,7 @@ def demo_selective_update():
                     },
                     {
                         'key': 'PATH',
-                        'value': '/api_v3/service/ottuser/action/get',
+                        'value': '/api_v3/service/ENDPOINT_7',
                         'rate_limit': {
                             'unit': 'minute',
                             'requests_per_unit': 500
@@ -38,11 +38,11 @@ def demo_selective_update():
             },
             {
                 'key': 'PARTNER',
-                'value': '439',
+                'value': 'CUSTOMER_ID_3',
                 'descriptors': [
                     {
                         'key': 'PATH',
-                        'value': '/api_v3/service/asset/action/get',
+                        'value': '/api_v3/service/ENDPOINT_8',
                         'rate_limit': {
                             'unit': 'minute',
                             'requests_per_unit': 800
@@ -55,19 +55,19 @@ def demo_selective_update():
     
     # New rate limits from analysis (some existing, some new)
     new_rate_limits = {
-        ('313', '/api_v3/service/asset/action/list'): {'recommended_rate_limit': 1500},  # Existing - UPDATE
-        ('313', '/api_v3/service/ottuser/action/get'): {'recommended_rate_limit': 700},   # Existing - UPDATE
-        ('439', '/api_v3/service/asset/action/get'): {'recommended_rate_limit': 1200},   # Existing - UPDATE
-        ('313', '/api_v3/service/new/action/create'): {'recommended_rate_limit': 300},   # New - SKIP in selective
-        ('999', '/api_v3/service/test/action/run'): {'recommended_rate_limit': 600},     # New - SKIP in selective
+        ('CUSTOMER_ID_1', '/api_v3/service/ENDPOINT_2'): {'recommended_rate_limit': 1500},  # Existing - UPDATE
+        ('CUSTOMER_ID_1', '/api_v3/service/ENDPOINT_7'): {'recommended_rate_limit': 700},   # Existing - UPDATE
+        ('CUSTOMER_ID_3', '/api_v3/service/ENDPOINT_8'): {'recommended_rate_limit': 1200},   # Existing - UPDATE
+        ('CUSTOMER_ID_1', '/api_v3/service/ENDPOINT_9'): {'recommended_rate_limit': 300},   # New - SKIP in selective
+        ('999', '/api_v3/service/TEST_ENDPOINT/action/run'): {'recommended_rate_limit': 600},     # New - SKIP in selective
     }
     
     print("📋 EXISTING ConfigMap:")
-    print("   Partner 313:")
-    print("     - /api_v3/service/asset/action/list: 1000 req/min")
-    print("     - /api_v3/service/ottuser/action/get: 500 req/min")
-    print("   Partner 439:")
-    print("     - /api_v3/service/asset/action/get: 800 req/min")
+    print("   Partner CUSTOMER_ID_1:")
+    print("     - /api_v3/service/ENDPOINT_2: 1000 req/min")
+    print("     - /api_v3/service/ENDPOINT_7: 500 req/min")
+    print("   Partner CUSTOMER_ID_3:")
+    print("     - /api_v3/service/ENDPOINT_8: 800 req/min")
     
     print(f"\n🔄 NEW RATE LIMITS from analysis ({len(new_rate_limits)} total):")
     for (partner, path), data in new_rate_limits.items():
@@ -85,11 +85,11 @@ def demo_selective_update():
     print("   ✅ Updates ONLY existing partner/path combinations")
     print("   ❌ Skips new combinations to avoid adding unwanted entries")
     print("\n   Result:")
-    print("   Partner 313:")
-    print("     - /api_v3/service/asset/action/list: 1000 → 1500 req/min ✅ UPDATED")
-    print("     - /api_v3/service/ottuser/action/get: 500 → 700 req/min ✅ UPDATED")
-    print("   Partner 439:")
-    print("     - /api_v3/service/asset/action/get: 800 → 1200 req/min ✅ UPDATED")
+    print("   Partner CUSTOMER_ID_1:")
+    print("     - /api_v3/service/ENDPOINT_2: 1000 → 1500 req/min ✅ UPDATED")
+    print("     - /api_v3/service/ENDPOINT_7: 500 → 700 req/min ✅ UPDATED")
+    print("   Partner CUSTOMER_ID_3:")
+    print("     - /api_v3/service/ENDPOINT_8: 800 → 1200 req/min ✅ UPDATED")
     print("   📊 Total: 3 existing combinations updated, 2 new combinations skipped")
     
     # Simulate full update
@@ -97,14 +97,14 @@ def demo_selective_update():
     print("   ✅ Updates existing partner/path combinations")
     print("   ➕ Adds ALL new combinations found in Prometheus data")
     print("\n   Result:")
-    print("   Partner 313:")
-    print("     - /api_v3/service/asset/action/list: 1000 → 1500 req/min ✅ UPDATED")
-    print("     - /api_v3/service/ottuser/action/get: 500 → 700 req/min ✅ UPDATED")
-    print("     - /api_v3/service/new/action/create: 300 req/min ➕ ADDED")
-    print("   Partner 439:")
-    print("     - /api_v3/service/asset/action/get: 800 → 1200 req/min ✅ UPDATED")
+    print("   Partner CUSTOMER_ID_1:")
+    print("     - /api_v3/service/ENDPOINT_2: 1000 → 1500 req/min ✅ UPDATED")
+    print("     - /api_v3/service/ENDPOINT_7: 500 → 700 req/min ✅ UPDATED")
+    print("     - /api_v3/service/ENDPOINT_9: 300 req/min ➕ ADDED")
+    print("   Partner CUSTOMER_ID_3:")
+    print("     - /api_v3/service/ENDPOINT_8: 800 → 1200 req/min ✅ UPDATED")
     print("   Partner 999:")
-    print("     - /api_v3/service/test/action/run: 600 req/min ➕ ADDED")
+    print("     - /api_v3/service/TEST_ENDPOINT/action/run: 600 req/min ➕ ADDED")
     print("   📊 Total: 3 existing combinations updated, 2 new combinations added")
     
     print(f"\n💡 PRODUCTION RECOMMENDATION:")

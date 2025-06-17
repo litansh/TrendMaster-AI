@@ -433,7 +433,7 @@ class MockPrometheusClient:
             'resultType': 'matrix',
             'result': [
                 {
-                    'metric': {'path': '/api_v3/service/multirequest', 'partner': '313'},
+                    'metric': {'path': '/api_v3/service/ENDPOINT_5', 'partner': 'CUSTOMER_ID_1'},
                     'values': values
                 }
             ]

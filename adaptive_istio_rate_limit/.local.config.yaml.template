@@ -1,0 +1,93 @@
+# Local Configuration Template
+# Copy this file to .local.config.yaml and fill in your actual values
+# This file contains sensitive information and should not be committed to git
+
+# IMPORTANT: Replace all placeholder values with your actual company data
+# This file should never be committed to version control
+
+# Environment Variables for Local Development
+# These will be loaded by the application when running locally
+
+# Company Information
+COMPANY_NAME: "YOUR_COMPANY_NAME"
+COMPANY_DOMAIN: "YOUR_COMPANY_DOMAIN.com"
+
+# Prometheus/Trickster URLs
+LOCAL_PROMETHEUS_URL: "https://trickster.staging.YOUR_DOMAIN.com"
+TESTING_PROMETHEUS_URL: "https://trickster.testing.YOUR_DOMAIN.com"
+STAGING_PROMETHEUS_URL: "https://trickster.staging.YOUR_DOMAIN.com"
+PRODUCTION_PROMETHEUS_URL: "https://trickster.production.YOUR_DOMAIN.com"
+
+# Container Registry Configuration
+ECR_REGISTRY: "YOUR_ECR_REGISTRY_ID.dkr.ecr.YOUR_REGION.amazonaws.com"
+ECR_REPOSITORY: "your-app-name"
+ECR_REGION: "YOUR_AWS_REGION"
+
+# Customer/Partner ID Mappings
+# Replace with your actual customer/partner IDs
+CUSTOMER_ID_1: "YOUR_CUSTOMER_1"
+CUSTOMER_ID_2: "YOUR_CUSTOMER_2"
+CUSTOMER_ID_3: "YOUR_CUSTOMER_3"
+CUSTOMER_ID_4: "YOUR_CUSTOMER_4"
+
+PARTNER_ID_1: "YOUR_PARTNER_1"
+PARTNER_ID_2: "YOUR_PARTNER_2"
+PARTNER_ID_3: "YOUR_PARTNER_3"
+PARTNER_ALPHA: "YOUR_PARTNER_ALPHA"
+PARTNER_BETA: "YOUR_PARTNER_BETA"
+
+# API Endpoint Mappings
+# Replace with your actual API endpoints
+ENDPOINT_1: "configurations/action/servebydevice"
+ENDPOINT_2: "asset/action/list"
+ENDPOINT_3: "ottuser/action/login"
+ENDPOINT_4: "session/action/get"
+ENDPOINT_5: "multirequest"
+ENDPOINT_6: "assethistory/action/list"
+ENDPOINT_7: "ottuser/action/get"
+ENDPOINT_8: "asset/action/get"
+ENDPOINT_9: "new/action/create"
+TEST_ENDPOINT: "test"
+
+# Local Test Configuration
+LOCAL_TEST_CUSTOMER_IDS: ["${CUSTOMER_ID_1}", "${CUSTOMER_ID_2}", "${CUSTOMER_ID_3}"]
+LOCAL_TEST_API_ENDPOINTS: [
+  "/api/v3/service/${ENDPOINT_1}",
+  "/api/v3/service/${ENDPOINT_2}",
+  "/api/v3/service/${ENDPOINT_3}",
+  "/api/v3/service/${ENDPOINT_4}"
+]
+LOCAL_TEST_PARTNER_MULTIPLIERS: {
+  "${CUSTOMER_ID_1}": 1.0,
+  "${CUSTOMER_ID_2}": 1.2,
+  "${CUSTOMER_ID_3}": 1.0
+}
+
+# Testing Environment Configuration
+TESTING_CUSTOMER_IDS: ["${PARTNER_ALPHA}", "${PARTNER_BETA}"]
+TESTING_API_ENDPOINTS: [
+  "/api/v3/service/${ENDPOINT_1}",
+  "/api/v3/service/${ENDPOINT_2}"
+]
+TESTING_PARTNER_MULTIPLIERS: {
+  "${PARTNER_ALPHA}": 1.5,
+  "${PARTNER_BETA}": 1.0
+}
+
+# Slack Configuration
+SLACK_WEBHOOK: "YOUR_SLACK_WEBHOOK_URL"
+SLACK_CHANNEL: "#your-alerts-channel"
+
+# Environment-specific overrides
+ENVIRONMENTS:
+  local:
+    prometheus_url: "${LOCAL_PROMETHEUS_URL}"
+    customers: ["${CUSTOMER_ID_1}", "${CUSTOMER_ID_2}", "${CUSTOMER_ID_3}"]
+  
+  staging:
+    prometheus_url: "${STAGING_PROMETHEUS_URL}"
+    customers: []  # Will be loaded from ConfigMap
+  
+  production:
+    prometheus_url: "${PRODUCTION_PROMETHEUS_URL}"
+    customers: []  # Will be loaded from ConfigMap
