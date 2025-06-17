@@ -113,6 +113,7 @@ class EnhancedRateCalculator:
         # Load rate calculation configuration
         self.rate_config = config.get('COMMON', {}).get('RATE_CALCULATION', {})
         self.formula_version = self.rate_config.get('formula_version', 'v3')
+        self.calculation_mode = self.rate_config.get('calculation_mode', 'adaptive')  # NEW: Store calculation mode
         self.peak_multiplier = self.rate_config.get('peak_multiplier', 2.5)
         self.cache_adjustment_factor = self.rate_config.get('cache_adjustment_factor', 1.2)
         self.safety_margin = self.rate_config.get('safety_margin', 1.2)
@@ -146,6 +147,7 @@ class EnhancedRateCalculator:
         
         self.logger.info(f"Enhanced Rate Calculator v3.0 initialized")
         self.logger.info(f"Formula: {self.formula_version}, Peak Multiplier: {self.peak_multiplier}")
+        self.logger.info(f"Calculation Mode: {self.calculation_mode.upper()}")  # NEW: Show calculation mode
         self.logger.info(f"Current Environment: {self.current_environment}")
         self.logger.info(f"Deployment Mode: {self.deployment_mode}")
         self.logger.info(f"Trickster Environment: {self.env_config.get('TRICKSTER_ENV', 'unknown')}")
@@ -262,16 +264,20 @@ class EnhancedRateCalculator:
         self.logger.info(f"Loaded partner config for '{config_key}': {len(selected_config.get('partners', []))} partners, {len(selected_config.get('apis', []))} APIs")
         return selected_config
 
-    def calculate_optimal_rate_limit(self, 
-                                   clean_metrics: pd.DataFrame, 
+    def calculate_optimal_rate_limit(self,
+                                   clean_metrics: pd.DataFrame,
                                    prime_time_data: pd.DataFrame,
                                    prophet_analysis: Dict,
-                                   partner: str, 
+                                   partner: str,
                                    path: str,
                                    cache_metrics: Optional[Dict] = None) -> RateCalculationResult:
         """
         Calculate optimal rate limit using production-ready v3 formula:
         2.5x average peaks (excluding anomalies) with cache considerations
+        
+        Mode-aware calculation:
+        - 'fixed': Simple 2.5x prime time peak with basic adjustments
+        - 'adaptive': Full analysis with Prophet, cache metrics, pattern analysis
         """
         try:
             # Check exclusions first
@@ -286,10 +292,19 @@ class EnhancedRateCalculator:
             # Calculate base metrics from anomaly-free data
             base_metrics = self._calculate_base_metrics(clean_metrics, prime_time_data)
             
-            # Apply v3 formula (2.5x average peaks)
-            recommended_rate = self._calculate_v3_formula(
-                base_metrics, prophet_analysis, partner, path, cache_metrics
-            )
+            # MODE-AWARE CALCULATION
+            if self.calculation_mode == 'fixed':
+                # FIXED MODE: Simple 2.5x prime time peak calculation
+                recommended_rate = self._calculate_fixed_mode(base_metrics, partner, path)
+                calculation_method = f'fixed_formula_{self.formula_version}'
+                self.logger.debug(f"Using FIXED mode calculation for {partner}/{path}")
+            else:
+                # ADAPTIVE MODE: Full analysis with Prophet, cache, patterns
+                recommended_rate = self._calculate_v3_formula(
+                    base_metrics, prophet_analysis, partner, path, cache_metrics
+                )
+                calculation_method = f'adaptive_formula_{self.formula_version}'
+                self.logger.debug(f"Using ADAPTIVE mode calculation for {partner}/{path}")
             
             # Apply partner and path-specific adjustments
             recommended_rate = self._apply_partner_path_adjustments(
@@ -302,7 +317,7 @@ class EnhancedRateCalculator:
             # Round according to configuration
             final_rate = self._round_rate_limit(final_rate)
             
-            # Calculate confidence metrics
+            # Calculate confidence metrics (mode-aware)
             confidence_info = self._calculate_confidence(base_metrics, prophet_analysis, clean_metrics)
             
             return RateCalculationResult(
@@ -310,7 +325,7 @@ class EnhancedRateCalculator:
                 path=path,
                 recommended_rate_limit=final_rate,
                 base_metrics=base_metrics,
-                calculation_method=f'enhanced_formula_{self.formula_version}',
+                calculation_method=calculation_method,
                 confidence=confidence_info,
                 cache_ratio_applied=self.cache_adjustment_factor,
                 safety_margin_applied=self.safety_margin,
@@ -333,24 +348,40 @@ class EnhancedRateCalculator:
         
         # Calculate percentiles efficiently
         overall_percentiles = np.percentile(overall_values, [50, 75, 90, 95, 99])
-        prime_percentiles = np.percentile(prime_values, [50, 75, 90, 95, 99])
+        prime_percentiles = np.percentile(prime_values, [50, 75, 90, 95, 99]) if len(prime_values) > 0 else overall_percentiles
         
         # Calculate key statistics
         overall_mean = np.mean(overall_values)
         overall_std = np.std(overall_values)
-        prime_mean = np.mean(prime_values)
-        prime_std = np.std(prime_values)
+        prime_mean = np.mean(prime_values) if len(prime_values) > 0 else overall_mean
+        prime_std = np.std(prime_values) if len(prime_values) > 0 else overall_std
         
-        # Calculate average peaks (excluding anomalies) - KEY METRIC for v3 formula
-        # Use 90th percentile as representative of "peaks" to avoid extreme outliers
-        average_peak_overall = overall_percentiles[2]  # 90th percentile
-        average_peak_prime = prime_percentiles[2]      # 90th percentile
+        # CORRECTED: Calculate average prime time peaks for v3 formula
+        # For prime time, we want the average of peak values (95th percentile) during prime time
+        # This represents the typical peak load during high-traffic periods
+        if len(prime_values) > 0:
+            # Use 95th percentile of prime time as the representative peak
+            average_prime_time_peak = prime_percentiles[3]  # 95th percentile of prime time
+            # Also calculate mean of top 10% of prime time values for comparison
+            top_10_percent_threshold = np.percentile(prime_values, 90)
+            top_prime_values = prime_values[prime_values >= top_10_percent_threshold]
+            average_of_prime_peaks = np.mean(top_prime_values) if len(top_prime_values) > 0 else average_prime_time_peak
+        else:
+            # Fallback to overall data if no prime time data
+            average_prime_time_peak = overall_percentiles[3]  # 95th percentile
+            top_10_percent_threshold = np.percentile(overall_values, 90)
+            top_overall_values = overall_values[overall_values >= top_10_percent_threshold]
+            average_of_prime_peaks = np.mean(top_overall_values) if len(top_overall_values) > 0 else average_prime_time_peak
         
         base_metrics = {
-            # Core metrics for v3 formula
-            'average_peak_overall': average_peak_overall,
-            'average_peak_prime': average_peak_prime,
-            'effective_peak': max(average_peak_overall, average_peak_prime),  # Use higher of the two
+            # Core metrics for v3 formula - CORRECTED
+            'average_prime_time_peak': average_prime_time_peak,
+            'average_of_prime_peaks': average_of_prime_peaks,
+            'effective_peak': average_prime_time_peak,  # Use prime time peak as the key metric
+            
+            # Legacy metrics for compatibility
+            'average_peak_overall': overall_percentiles[2],  # 90th percentile overall
+            'average_peak_prime': prime_percentiles[2] if len(prime_values) > 0 else overall_percentiles[2],
             
             # Overall metrics (optimized)
             'overall_mean': overall_mean,
@@ -381,14 +412,40 @@ class EnhancedRateCalculator:
         
         return base_metrics
     
-    def _calculate_v3_formula(self, base_metrics: Dict, prophet_analysis: Dict, 
+    def _calculate_fixed_mode(self, base_metrics: Dict, partner: str, path: str) -> float:
+        """
+        FIXED MODE: Simple 2.5x prime time peak calculation
+        
+        Simplified formula: recommended_rate = prime_time_peak * 2.5 * basic_cache_adjustment
+        No Prophet analysis, no pattern analysis, no trend adjustments
+        """
+        # Get the prime time peak (95th percentile of prime time data)
+        effective_peak = base_metrics['effective_peak']
+        
+        # Apply core 2.5x multiplier - SIMPLE VERSION
+        base_rate = effective_peak * self.peak_multiplier
+        
+        # Apply basic cache adjustment only (no complex cache analysis)
+        cache_adjusted_rate = base_rate * self.cache_adjustment_factor
+        
+        self.logger.debug(
+            f"FIXED Mode for {partner}/{path}: "
+            f"PrimeTimePeak={effective_peak:.1f}, "
+            f"BaseRate={base_rate:.1f}, "
+            f"CacheAdjustment={self.cache_adjustment_factor:.2f}, "
+            f"FinalRate={cache_adjusted_rate:.1f}"
+        )
+        
+        return cache_adjusted_rate
+    
+    def _calculate_v3_formula(self, base_metrics: Dict, prophet_analysis: Dict,
                              partner: str, path: str, cache_metrics: Optional[Dict] = None) -> float:
         """
-        NEW v3 Formula: 2.5x average peaks (excluding anomalies) with cache considerations
+        ADAPTIVE MODE: Full v3 Formula with Prophet analysis and cache considerations
         
-        Core Formula: recommended_rate = effective_peak * 2.5 * cache_adjustment * trend_adjustment
+        Core Formula: recommended_rate = effective_peak * 2.5 * cache_adjustment * trend_adjustment * pattern_adjustment
         """
-        # Get the effective peak (90th percentile representing average peaks)
+        # Get the effective peak (95th percentile representing average peaks)
         effective_peak = base_metrics['effective_peak']
         traffic_pattern = base_metrics['traffic_pattern']
         
@@ -415,7 +472,7 @@ class EnhancedRateCalculator:
         final_rate = pattern_adjusted_rate * trend_multiplier
         
         self.logger.debug(
-            f"V3 Formula for {partner}/{path}: "
+            f"ADAPTIVE Mode for {partner}/{path}: "
             f"EffectivePeak={effective_peak:.1f}, "
             f"BaseRate={base_rate:.1f}, "
             f"CacheMultiplier={cache_multiplier:.2f}, "
@@ -668,20 +725,20 @@ class EnhancedRateCalculator:
         else:
             return ConfidenceLevel.LOW
     
-    def _generate_rationale(self, base_metrics: Dict, recommended_rate: float, 
+    def _generate_rationale(self, base_metrics: Dict, recommended_rate: float,
                           final_rate: int, cache_metrics: Optional[Dict] = None) -> str:
         """
         Generate comprehensive rationale for production transparency
         """
         rationale_parts = []
         
-        # Core formula explanation
-        effective_peak = base_metrics.get('effective_peak', 0)
+        # Core formula explanation - CORRECTED
+        prime_time_peak = base_metrics.get('average_prime_time_peak', 0)
         traffic_pattern = base_metrics.get('traffic_pattern', TrafficPattern.STABLE)
         
         rationale_parts.append(
-            f"Applied v{self.formula_version} formula: {self.peak_multiplier}x average peak "
-            f"({effective_peak:.1f}) with {traffic_pattern.value} traffic pattern in {self.current_environment} environment"
+            f"Applied v{self.formula_version} formula: {self.peak_multiplier}x average prime time peak "
+            f"({prime_time_peak:.1f}) with {traffic_pattern.value} traffic pattern in {self.current_environment} environment"
         )
         
         # Cache consideration

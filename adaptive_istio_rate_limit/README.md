@@ -1,5 +1,29 @@
 # TrendMaster-AI Adaptive Istio Rate Limiting System v3.0
 
+## 🎯 Two Execution Modes Available
+
+### FIXED Mode - Simple & Conservative
+```bash
+# Simple 2.5x prime time peak formula with production best practices
+python scripts/main.py --mode fixed
+```
+
+### ADAPTIVE Mode - Advanced & Optimized
+```bash
+# Full analysis with cache awareness and advanced features
+python scripts/main.py --mode adaptive
+```
+
+📖 **[See USAGE_MODES.md for detailed comparison and usage guide](USAGE_MODES.md)**
+
+**Production Best Practices Included:**
+- Phased rollout with shadow mode
+- Circuit breaker protection
+- Emergency bypass capabilities
+- Partner notification systems
+- VIP partner protection
+- Conservative safety margins
+
 ## 🚨 Quick Start - No Hanging Issues
 
 If you're experiencing hanging during Prophet analysis, use these guaranteed solutions:

@@ -813,12 +813,19 @@ Examples:
     parser.add_argument('--show-env', action='store_true', help='Show environment information')
     parser.add_argument('--output-format', choices=['json', 'yaml'], default='json', help='Output format')
     parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose logging')
+    parser.add_argument('--mode', choices=['fixed', 'adaptive'], default=None,
+                       help='Calculation mode: fixed (simple 2.5x prime peak) or adaptive (full analysis)')
     
     args = parser.parse_args()
     
     try:
         # Initialize the adaptive rate limiter
         rate_limiter = AdaptiveRateLimiter(args.config)
+        
+        # Override calculation mode if specified via command line
+        if args.mode:
+            rate_limiter.rate_calculator.calculation_mode = args.mode
+            rate_limiter.logger.info(f"Calculation mode overridden to: {args.mode}")
         
         # Handle special modes
         if args.show_env:

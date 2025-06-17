@@ -9,6 +9,17 @@ trendmaster_ai:
   log_level: "INFO"
   schedule: "0 */4 * * *"  # Every 4 hours for production (more frequent)
   
+  # Production best practices - Conservative settings for PRD1
+  calculation_mode: "fixed"  # Conservative for production (can be 'adaptive')
+  phased_rollout: "true"
+  shadow_mode_duration: "336"  # 2 weeks for critical production
+  initial_safety_buffer: "2.5"  # Extra conservative for prd1
+  circuit_breaker_enabled: "true"
+  circuit_breaker_threshold: "0.02"  # 2% error rate for prd1
+  emergency_bypass_enabled: "true"
+  partner_notification_required: "true"
+  vip_partner_protection: "true"  # Extra protection for critical partners
+  
   # Higher resource allocation for production
   resources:
     requests:

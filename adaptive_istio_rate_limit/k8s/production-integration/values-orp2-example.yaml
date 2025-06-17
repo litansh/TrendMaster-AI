@@ -9,6 +9,15 @@ trendmaster_ai:
   log_level: "INFO"
   schedule: "0 */6 * * *"  # Every 6 hours
   
+  # Calculation mode and best practices
+  calculation_mode: "fixed"  # Options: 'fixed' or 'adaptive'
+  phased_rollout: "true"
+  shadow_mode_duration: "168"  # Hours (1 week)
+  initial_safety_buffer: "2.0"
+  circuit_breaker_enabled: "true"
+  emergency_bypass_enabled: "true"
+  partner_notification_required: "true"
+  
   # Resource allocation
   resources:
     requests:
