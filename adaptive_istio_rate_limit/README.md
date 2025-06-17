@@ -1,5 +1,26 @@
 # TrendMaster-AI Adaptive Istio Rate Limiting System v3.0
 
+## 🚨 Quick Start - No Hanging Issues
+
+If you're experiencing hanging during Prophet analysis, use these guaranteed solutions:
+
+### Option 1: Skip Prophet (Fastest - Recommended)
+```bash
+TRENDMASTER_SKIP_PROPHET=true python scripts/main.py
+```
+
+### Option 2: Use the No-Hang Script
+```bash
+./run-no-hang.sh
+```
+
+### Option 3: Maximum Safety
+```bash
+TRENDMASTER_SKIP_PROPHET=true timeout 60 python scripts/main.py
+```
+
+---
+
 An intelligent, ML-powered adaptive rate limiting system for Istio service mesh that uses Facebook Prophet for traffic forecasting and anomaly detection.
 
 ## 🚀 Features

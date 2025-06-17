@@ -20,6 +20,10 @@ import logging
 import argparse
 import json
 import yaml
+import signal
+import threading
+import time
+import multiprocessing
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
@@ -339,26 +343,31 @@ class AdaptiveRateLimiter:
     def _process_partner_api(self, partner: str, api: str) -> Optional[Dict[str, Any]]:
         """Process a single partner/API combination"""
         try:
-            self.logger.debug(f"Processing {partner}/{api}")
+            self.logger.info(f"Processing {partner}/{api}")
             
             # Fetch metrics data
             if self.env_info.dry_run or not self.prometheus_client:
                 # Use mock data for local/dry-run mode
                 clean_metrics, prime_time_data = self.data_fetcher.generate_mock_data(partner, api)
-                self.logger.debug(f"Using mock data for {partner}/{api}")
+                self.logger.info(f"Using mock data for {partner}/{api}")
             else:
                 # Fetch real data from Prometheus
                 clean_metrics, prime_time_data = self.data_fetcher.fetch_and_clean_data(partner, api)
-                self.logger.debug(f"Fetched real data for {partner}/{api}: {len(clean_metrics)} points")
+                self.logger.info(f"Fetched real data for {partner}/{api}: {len(clean_metrics)} points")
             
             if len(clean_metrics) == 0:
                 self.logger.warning(f"No data available for {partner}/{api}")
                 return None
             
-            # Perform Prophet analysis
-            prophet_analysis = self.prophet_analyzer.analyze_traffic_patterns(
-                clean_metrics, partner, api
-            )
+            # Check if we should skip Prophet entirely for fastest processing
+            skip_prophet = os.getenv('TRENDMASTER_SKIP_PROPHET', 'false').lower() == 'true'
+            
+            if skip_prophet:
+                self.logger.info(f"Skipping Prophet analysis (TRENDMASTER_SKIP_PROPHET=true) for {partner}/{api}")
+                prophet_analysis = self.prophet_analyzer._fallback_analysis(clean_metrics, partner, api)
+            else:
+                # Perform Prophet analysis with timeout protection
+                prophet_analysis = self._analyze_with_timeout(clean_metrics, partner, api)
             
             # Detect prime time periods
             prime_time_periods = self.prime_time_detector.detect_prime_time_periods(
@@ -402,6 +411,130 @@ class AdaptiveRateLimiter:
         except Exception as e:
             self.logger.error(f"Failed to process {partner}/{api}: {e}")
             return None
+    
+    def _analyze_with_timeout(self, clean_metrics, partner: str, api: str, timeout_seconds: int = 60) -> Dict:
+        """
+        Perform Prophet analysis with aggressive timeout protection using multiprocessing
+        """
+        self.logger.info(f"Starting Prophet analysis with {timeout_seconds}s timeout for {partner}/{api}")
+        
+        def prophet_worker(queue, clean_metrics, partner, api):
+            """Worker function that runs Prophet analysis in separate process"""
+            try:
+                # Set CI mode for faster processing
+                os.environ['TRENDMASTER_CI_MODE'] = 'true'
+                
+                # Import here to avoid issues with multiprocessing
+                from scripts.core.prophet_analyzer import ProphetAnalyzer
+                analyzer = ProphetAnalyzer(self.config)
+                
+                self.logger.info(f"Worker process starting Prophet analysis for {partner}/{api}")
+                result = analyzer.analyze_traffic_patterns(clean_metrics, partner, api)
+                queue.put(('success', result))
+                
+            except Exception as e:
+                self.logger.error(f"Prophet worker failed for {partner}/{api}: {e}")
+                queue.put(('error', str(e)))
+        
+        # Try multiprocessing approach first
+        try:
+            # Create a queue for communication
+            queue = multiprocessing.Queue()
+            
+            # Create and start process
+            process = multiprocessing.Process(
+                target=prophet_worker,
+                args=(queue, clean_metrics, partner, api)
+            )
+            process.start()
+            
+            # Wait for completion with timeout
+            process.join(timeout=timeout_seconds)
+            
+            if process.is_alive():
+                # Timeout occurred - terminate the process
+                self.logger.warning(f"Prophet analysis timed out after {timeout_seconds}s for {partner}/{api}, terminating process")
+                process.terminate()
+                process.join(timeout=5)  # Give it 5 seconds to terminate gracefully
+                
+                if process.is_alive():
+                    # Force kill if it doesn't terminate
+                    self.logger.warning(f"Force killing Prophet process for {partner}/{api}")
+                    process.kill()
+                    process.join()
+                
+                # Use fallback analysis
+                self.logger.info(f"Using statistical fallback for {partner}/{api}")
+                return self.prophet_analyzer._fallback_analysis(clean_metrics, partner, api)
+            
+            # Process completed - get result
+            if not queue.empty():
+                status, result = queue.get()
+                if status == 'success':
+                    self.logger.info(f"Prophet analysis completed successfully for {partner}/{api}")
+                    return result
+                else:
+                    self.logger.warning(f"Prophet analysis failed for {partner}/{api}: {result}")
+                    return self.prophet_analyzer._fallback_analysis(clean_metrics, partner, api)
+            else:
+                self.logger.warning(f"No result from Prophet process for {partner}/{api}")
+                return self.prophet_analyzer._fallback_analysis(clean_metrics, partner, api)
+                
+        except Exception as e:
+            self.logger.error(f"Multiprocessing Prophet analysis failed for {partner}/{api}: {e}")
+        
+        # Fallback to threading approach if multiprocessing fails
+        self.logger.info(f"Falling back to threading approach for {partner}/{api}")
+        return self._analyze_with_threading_timeout(clean_metrics, partner, api, timeout_seconds)
+    
+    def _analyze_with_threading_timeout(self, clean_metrics, partner: str, api: str, timeout_seconds: int = 30) -> Dict:
+        """
+        Fallback Prophet analysis with threading timeout
+        """
+        result = {}
+        exception_occurred = None
+        
+        def target():
+            nonlocal result, exception_occurred
+            try:
+                # Set CI mode temporarily for faster processing
+                original_ci_mode = os.environ.get('TRENDMASTER_CI_MODE', '')
+                os.environ['TRENDMASTER_CI_MODE'] = 'true'
+                
+                self.logger.info(f"Thread-based Prophet analysis starting for {partner}/{api}")
+                
+                try:
+                    result = self.prophet_analyzer.analyze_traffic_patterns(
+                        clean_metrics, partner, api
+                    )
+                finally:
+                    # Restore original CI mode setting
+                    if original_ci_mode:
+                        os.environ['TRENDMASTER_CI_MODE'] = original_ci_mode
+                    elif 'TRENDMASTER_CI_MODE' in os.environ:
+                        del os.environ['TRENDMASTER_CI_MODE']
+                        
+            except Exception as e:
+                exception_occurred = e
+        
+        # Create and start thread
+        thread = threading.Thread(target=target)
+        thread.daemon = True
+        thread.start()
+        
+        # Wait for completion with timeout
+        thread.join(timeout=timeout_seconds)
+        
+        if thread.is_alive():
+            # Timeout occurred
+            self.logger.warning(f"Threading Prophet analysis timed out after {timeout_seconds}s for {partner}/{api}")
+            return self.prophet_analyzer._fallback_analysis(clean_metrics, partner, api)
+        
+        if exception_occurred:
+            self.logger.warning(f"Threading Prophet analysis failed for {partner}/{api}: {exception_occurred}")
+            return self.prophet_analyzer._fallback_analysis(clean_metrics, partner, api)
+        
+        return result
     
     def _generate_configmaps(self, rate_limits: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Generate Kubernetes ConfigMaps from rate limit results"""
