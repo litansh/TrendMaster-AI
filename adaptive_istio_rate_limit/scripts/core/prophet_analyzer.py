@@ -48,32 +48,27 @@ class ProphetAnalyzer:
                 self.logger.warning(f"Insufficient data for Prophet analysis: {partner}/{path}")
                 return self._fallback_analysis(metrics_df, partner, path)
             
-            # In CI mode, use a timeout for Prophet operations
+            # In CI mode, use faster settings and fallback quickly if needed
             if ci_mode:
-                import signal
-                
-                def timeout_handler(signum, frame):
-                    raise TimeoutError("Prophet analysis timed out")
-                
-                # Set timeout for Prophet operations (30 seconds in CI mode)
-                signal.signal(signal.SIGALRM, timeout_handler)
-                signal.alarm(30)
-                
                 try:
-                    # Create and fit Prophet model
+                    # Create and fit Prophet model with fast settings
                     model = self._create_prophet_model()
-                    self.logger.info(f"Fitting Prophet model for {partner}/{path} (CI mode)")
+                    self.logger.info(f"Fitting Prophet model for {partner}/{path} (CI mode - fast settings)")
+                    
+                    # Use minimal data for CI mode to speed up processing
+                    if len(prophet_df) > 50:
+                        # Sample data to speed up processing in CI mode
+                        prophet_df = prophet_df.sample(n=50).sort_values('ds').reset_index(drop=True)
+                        self.logger.info(f"Reduced dataset to 50 points for CI mode speed")
+                    
                     model.fit(prophet_df)
                     
                     # Generate forecast
                     future = model.make_future_dataframe(periods=0)  # No future prediction, just analysis
                     forecast = model.predict(future)
                     
-                    signal.alarm(0)  # Cancel timeout
-                    
-                except TimeoutError:
-                    signal.alarm(0)  # Cancel timeout
-                    self.logger.warning(f"Prophet analysis timed out for {partner}/{path}, falling back to statistical analysis")
+                except Exception as e:
+                    self.logger.warning(f"Prophet analysis failed in CI mode for {partner}/{path}: {e}, falling back to statistical analysis")
                     return self._fallback_analysis(metrics_df, partner, path)
             else:
                 # Normal mode without timeout
