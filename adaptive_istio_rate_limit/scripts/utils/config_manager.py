@@ -150,7 +150,7 @@ class ConfigManager:
                 return env_value.lower()
         
         # Default fallback
-        default_env = 'orp2'
+        default_env = 'staging'
         self.logger.warning(f"No environment variable found, defaulting to: {default_env}")
         return default_env
     
@@ -163,7 +163,7 @@ class ConfigManager:
         
         # Map environment to deployment mode
         env_to_mode_mapping = {
-            'orp2': 'local',
+            'staging': 'local',
             'local': 'local',
             'development': 'local',
             'dev': 'local',
@@ -313,7 +313,7 @@ class ConfigManager:
         if deployment_mode in ['production', 'testing']:
             return self._get_configmap_partner_config(deployment_mode)
         else:
-            # For local development, use config.yaml defaults (orp2)
+            # For local development, use config.yaml defaults (staging)
             return self._get_local_partner_config()
     
     def _get_configmap_partner_config(self, deployment_mode: str) -> Dict[str, Any]:
@@ -338,20 +338,20 @@ class ConfigManager:
         # First try to get from local config file (hidden file with sensitive data)
         if self.local_config and 'PARTNER_CONFIGS' in self.local_config:
             local_partner_configs = self.local_config['PARTNER_CONFIGS']
-            orp2_config = local_partner_configs.get('orp2', {})
-            if orp2_config:
-                orp2_config['source'] = 'local_config_yaml'
-                self.logger.info(f"Local development using .local.config.yaml: {len(orp2_config.get('partners', []))} partners, {len(orp2_config.get('apis', []))} APIs")
-                return orp2_config
+            staging_config = local_partner_configs.get('staging', {})
+            if staging_config:
+                staging_config['source'] = 'local_config_yaml'
+                self.logger.info(f"Local development using .local.config.yaml: {len(staging_config.get('partners', []))} partners, {len(staging_config.get('apis', []))} APIs")
+                return staging_config
         
         # Fallback to main config.yaml (sanitized version)
         partner_configs = self.processed_config.get('PARTNER_CONFIGS', {})
-        orp2_config = partner_configs.get('orp2', {})
-        orp2_config['source'] = 'config_yaml'
+        staging_config = partner_configs.get('staging', {})
+        staging_config['source'] = 'config_yaml'
         
-        self.logger.info(f"Local development using orp2 config.yaml: {len(orp2_config.get('partners', []))} partners, {len(orp2_config.get('apis', []))} APIs")
+        self.logger.info(f"Local development using staging config.yaml: {len(staging_config.get('partners', []))} partners, {len(staging_config.get('apis', []))} APIs")
         
-        return orp2_config
+        return staging_config
     
     def get_environment_info(self) -> EnvironmentInfo:
         """Get comprehensive environment information"""

@@ -1,10 +1,10 @@
-# Example configuration for values-orp2.yaml
-# Add these sections to your existing values-orp2.yaml file
+# Example configuration for values-staging.yaml
+# Add these sections to your existing values-staging.yaml file
 
 # TrendMaster-AI Adaptive Rate Limiting Configuration
 trendmaster_ai:
   enabled: "true"
-  prometheus_url: "https://trickster.orp2.ott.YOUR_COMPANY.com"
+  prometheus_url: "https://trickster.staging.YOUR_COMPANY.com"
   dry_run: "false"  # Set to "true" for testing
   log_level: "INFO"
   schedule: "0 */6 * * *"  # Every 6 hours

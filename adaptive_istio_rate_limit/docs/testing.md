@@ -282,7 +282,7 @@ ENVIRONMENT=production python tests/test_sanity.py
 
 #### Environment Detection Issues
 ```bash
-# Problem: "No environment variable found, defaulting to: orp2"
+# Problem: "No environment variable found, defaulting to: staging"
 # Solution: Set explicit environment variable
 ENVIRONMENT=testing python tests/test_sanity.py
 ```

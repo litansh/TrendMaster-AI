@@ -164,7 +164,7 @@ class EnhancedRateCalculator:
                 return env_value.lower()
         
         # Default fallback
-        default_env = 'orp2'
+        default_env = 'staging'
         self.logger.warning(f"No environment variable found, defaulting to: {default_env}")
         return default_env
     
@@ -177,7 +177,7 @@ class EnhancedRateCalculator:
         
         # Map environment to deployment mode
         env_to_mode_mapping = {
-            'orp2': 'local',
+            'staging': 'local',
             'local': 'local',
             'development': 'local',
             'dev': 'local',
@@ -216,9 +216,9 @@ class EnhancedRateCalculator:
         # Determine which partner config to use based on current environment
         partner_configs = self.config.get('PARTNER_CONFIGS', {})
         
-        # For orp2 environment (local/testing), use orp2 config
-        if self.current_environment in ['orp2', 'local', 'development', 'testing', 'staging']:
-            config_key = 'orp2'
+        # For staging environment (local/testing), use staging config
+        if self.current_environment in ['staging', 'local', 'development', 'testing', 'staging']:
+            config_key = 'staging'
         else:
             # For production and other environments, use production config
             config_key = 'production'

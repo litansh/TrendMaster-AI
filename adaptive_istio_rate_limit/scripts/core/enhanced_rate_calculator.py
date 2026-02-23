@@ -173,7 +173,7 @@ class EnhancedRateCalculator:
                 return env_value.lower()
         
         # Default fallback
-        default_env = 'orp2'
+        default_env = 'staging'
         self.logger.warning(f"No environment variable found, defaulting to: {default_env}")
         return default_env
     
@@ -186,7 +186,7 @@ class EnhancedRateCalculator:
         
         # Map environment to deployment mode
         env_to_mode_mapping = {
-            'orp2': 'local',
+            'staging': 'local',
             'local': 'local',
             'development': 'local',
             'dev': 'local',
@@ -229,10 +229,10 @@ class EnhancedRateCalculator:
         if self.current_environment in partner_configs:
             config_key = self.current_environment
         # Fallback logic for specific environment categories if direct match failed
-        elif self.current_environment in ['orp2', 'local', 'development'] and 'orp2' in partner_configs:
-            config_key = 'orp2'
-            self.logger.info(f"Using 'orp2' partner config as fallback for environment '{self.current_environment}'")
-        elif self.current_environment in ['orp2', 'local', 'development'] and 'local' in partner_configs:
+        elif self.current_environment in ['staging', 'local', 'development'] and 'staging' in partner_configs:
+            config_key = 'staging'
+            self.logger.info(f"Using 'staging' partner config as fallback for environment '{self.current_environment}'")
+        elif self.current_environment in ['staging', 'local', 'development'] and 'local' in partner_configs:
             config_key = 'local'
             self.logger.info(f"Using 'local' partner config as fallback for environment '{self.current_environment}'")
         # If current_environment is 'testing' or 'staging', it should have been caught by the first 'if'

@@ -27,7 +27,7 @@ TrendMaster-AI/adaptive_istio_rate_limit/
 ```yaml
 # config/config.yaml - Safe for git
 PARTNER_CONFIGS:
-  orp2:
+  staging:
     partners: []  # Loaded from .local.config.yaml or ConfigMap
     apis: []      # Loaded from .local.config.yaml or ConfigMap
 

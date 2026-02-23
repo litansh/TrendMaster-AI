@@ -48,7 +48,7 @@ deployment:
 
 # Environment configuration
 environment:
-  # Will be set by parent values file (values-orp2.yaml, values-prd1.yaml, etc.)
+  # Will be set by parent values file (values-staging.yaml, values-production.yaml, etc.)
   name: "production"
   prometheus_url: ""
   dry_run: false

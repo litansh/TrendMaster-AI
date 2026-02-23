@@ -51,14 +51,14 @@ def main():
     
     # Test 1: Local environment (uses config.yaml defaults)
     run_test(
-        "Local Environment - Uses orp2 config.yaml defaults",
-        {"ENVIRONMENT": "orp2"},
+        "Local Environment - Uses staging config.yaml defaults",
+        {"ENVIRONMENT": "staging"},
         ["--show-env"]
     )
     
     # Test 2: Testing environment (uses config.yaml defaults)
     run_test(
-        "Testing Environment - Uses orp2 config.yaml defaults",
+        "Testing Environment - Uses staging config.yaml defaults",
         {"ENVIRONMENT": "testing"},
         ["--show-env"]
     )
@@ -70,7 +70,7 @@ def main():
             "ENVIRONMENT": "production",
             "PARTNERS": "100,200,300,400,500",
             "APIS": "/api_v3/service/ENDPOINT_5,/api_v3/service/ENDPOINT_2,/api_v3/service/user/action/get",
-            "PROMETHEUS_URL": "https://trickster.production.ott.YOUR_COMPANY.com",
+            "PROMETHEUS_URL": "https://trickster.production.YOUR_COMPANY.com",
             "TRICKSTER_ENV": "production",
             "DRY_RUN": "false"
         },
@@ -93,7 +93,7 @@ def main():
         "Production - No partner/API env vars (full fallback)",
         {
             "ENVIRONMENT": "production",
-            "PROMETHEUS_URL": "https://trickster.production.ott.YOUR_COMPANY.com"
+            "PROMETHEUS_URL": "https://trickster.production.YOUR_COMPANY.com"
             # No PARTNERS or APIS env vars - should use config.yaml production defaults
         },
         ["--show-env"]
@@ -115,7 +115,7 @@ def main():
     print(f"\n{'='*80}")
     print("TEST SUMMARY")
     print(f"{'='*80}")
-    print("✅ Local/Testing environments use orp2 config.yaml defaults")
+    print("✅ Local/Testing environments use staging config.yaml defaults")
     print("✅ Production environment prioritizes environment variables")
     print("✅ Production falls back to config.yaml when env vars missing")
     print("✅ Mixed scenarios work correctly")

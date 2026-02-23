@@ -51,7 +51,7 @@ An intelligent, ML-powered adaptive rate limiting system for Istio service mesh 
 
 - **ML-Powered Analysis**: Facebook Prophet for traffic forecasting and trend analysis
 - **Enhanced v3 Formula**: 2.5x average peak formula with cache considerations and anomaly detection
-- **Environment-Aware**: Supports local, testing, orp2, and production environments
+- **Environment-Aware**: Supports local, testing, staging, and production environments
 - **Kubernetes Integration**: Generates production-ready ConfigMaps for Istio rate limiting
 - **Multi-Environment Support**: Different configurations and partner sets per environment
 - **Mock Data Mode**: For local development and testing without real Prometheus data
@@ -107,7 +107,7 @@ pip install -r requirements.txt
 
 ### 3. Configure Environment
 ```bash
-# Set environment (local, testing, orp2, production)
+# Set environment (local, testing, staging, production)
 export APP_ENV=local
 
 # For production environments, ensure Kubernetes access
@@ -265,7 +265,7 @@ spec:
         - name: APP_ENV
           value: "production"
         - name: PROMETHEUS_URL
-          value: "https://prometheus.production.ott.YOUR_COMPANY.com"
+          value: "https://prometheus.production.YOUR_COMPANY.com"
         resources:
           requests:
             memory: "512Mi"
@@ -389,7 +389,7 @@ data:
 ## 🔧 Configuration
 
 ### Environment Variables
-- `APP_ENV`: Environment name (local, testing, orp2, production)
+- `APP_ENV`: Environment name (local, testing, staging, production)
 - `PROMETHEUS_URL`: Prometheus endpoint URL
 - `KUBECONFIG`: Kubernetes configuration file path
 
@@ -457,7 +457,7 @@ kubectl auth can-i get configmaps --as=system:serviceaccount:istio-system:trendm
 **2. Prometheus Connection Issues**
 ```bash
 # Test Prometheus connectivity
-curl -k "https://prometheus.production.ott.YOUR_COMPANY.com/api/v1/query?query=up"
+curl -k "https://prometheus.production.YOUR_COMPANY.com/api/v1/query?query=up"
 ```
 
 **3. ConfigMap Not Found**

@@ -33,7 +33,7 @@ spec:
           region: {{ .Values.global.region }}
         environment:
           name: {{ .Values.cluster_name }}
-          prometheus_url: {{ .Values.trendmaster_ai.prometheus_url | default "https://trickster.orp2.ott.YOUR_COMPANY.com" }}
+          prometheus_url: {{ .Values.trendmaster_ai.prometheus_url | default "https://trickster.staging.YOUR_COMPANY.com" }}
           dry_run: {{ .Values.trendmaster_ai.dry_run | default "false" }}
           log_level: {{ .Values.trendmaster_ai.log_level | default "INFO" }}
         {{- if .Values.trendmaster_ai.schedule }}

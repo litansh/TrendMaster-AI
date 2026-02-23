@@ -11,11 +11,11 @@ data:
     # Adaptive Istio Rate Limiting System Configuration
     DEPLOYMENT:
       MODE: "production"
-      ENVIRONMENT: "orp2"
+      ENVIRONMENT: "staging"
 
     ENVIRONMENTS:
       production:
-        PROMETHEUS_URL: "https://trickster.orp2.ott.YOUR_COMPANY.com"
+        PROMETHEUS_URL: "https://trickster.staging.YOUR_COMPANY.com"
         KUBERNETES_CONFIG: "/root/.kube/config"
         KUBERNETES_CONTEXT: "eks-production"
         CONFIGMAP_NAMESPACE: "istio-system"
@@ -25,7 +25,7 @@ data:
         MONITORING_ENABLED: true
 
     COMMON:
-      ENV: "orp2"
+      ENV: "staging"
       DAYS_TO_INSPECT: 7
       LOG_LEVEL: "INFO"
       SHOW_ONLY_CONFIGURED: true

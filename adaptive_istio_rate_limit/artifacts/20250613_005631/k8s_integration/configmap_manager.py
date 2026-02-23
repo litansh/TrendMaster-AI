@@ -114,7 +114,7 @@ class ConfigMapManager:
     
     def generate_configmap(self, rate_limits: Dict[str, Dict],
                           template_configmap: Optional[Dict] = None,
-                          env: str = "orp2",
+                          env: str = "staging",
                           selective_update: bool = True) -> Dict:
         """
         Generate new ConfigMap with updated rate limits
@@ -573,7 +573,7 @@ class ConfigMapManager:
     
     def create_rate_limit_configmap(self, rate_limits: Dict[str, Dict],
                                   configmap_name: str = "ratelimit-config",
-                                  env: str = "orp2") -> Optional[Dict]:
+                                  env: str = "staging") -> Optional[Dict]:
         """
         Create a new rate limit ConfigMap with calculated rate limits
         

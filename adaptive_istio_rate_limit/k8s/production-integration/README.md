@@ -4,7 +4,7 @@ This guide explains how to integrate TrendMaster-AI with YOUR_COMPANY's existing
 
 ## 📋 Prerequisites
 
-- Access to `ott-rnd-k8s` repository
+- Access to `platform-k8s` repository
 - AWS CLI configured with ECR access
 - Docker installed and running
 - kubectl configured for target environments
@@ -21,14 +21,14 @@ cd TrendMaster-AI/adaptive_istio_rate_limit
 
 ### 2. Update Environment Values Files
 
-Add the TrendMaster-AI configuration to your existing values files in `ott-rnd-k8s/be-charts/`:
+Add the TrendMaster-AI configuration to your existing values files in `platform-k8s/be-charts/`:
 
-#### For ORP2 Environment (`values-orp2.yaml`):
+#### For STAGING Environment (`values-staging.yaml`):
 ```yaml
-# Add this section to your existing values-orp2.yaml
+# Add this section to your existing values-staging.yaml
 trendmaster_ai:
   enabled: "true"
-  prometheus_url: "https://trickster.orp2.ott.YOUR_COMPANY.com"
+  prometheus_url: "https://trickster.staging.YOUR_COMPANY.com"
   dry_run: "false"
   log_level: "INFO"
   schedule: "0 */6 * * *"
@@ -41,12 +41,12 @@ trendmaster_ai:
       cpu: "500m"
 ```
 
-#### For PRD1 Environment (`values-prd1.yaml`):
+#### For PRODUCTION Environment (`values-production.yaml`):
 ```yaml
-# Add this section to your existing values-prd1.yaml
+# Add this section to your existing values-production.yaml
 trendmaster_ai:
   enabled: "true"
-  prometheus_url: "https://trickster.prd1.ott.YOUR_COMPANY.com"
+  prometheus_url: "https://trickster.production.YOUR_COMPANY.com"
   dry_run: "false"
   log_level: "INFO"
   schedule: "0 */4 * * *"
@@ -65,7 +65,7 @@ Copy the Helm chart to your charts directory:
 
 ```bash
 # Copy Helm chart to be-charts
-cp -r TrendMaster-AI/adaptive_istio_rate_limit/k8s/helm-chart ott-rnd-k8s/be-charts/trendmaster-ai
+cp -r TrendMaster-AI/adaptive_istio_rate_limit/k8s/helm-chart platform-k8s/be-charts/trendmaster-ai
 ```
 
 ### 4. Create ArgoCD Application

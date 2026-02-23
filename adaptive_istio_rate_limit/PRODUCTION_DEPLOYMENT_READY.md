@@ -2,7 +2,7 @@
 
 ## ✅ Security Variabilization Complete
 
-The TrendMaster-AI system has been successfully variabilized and is now ready for production deployment using your existing `ott-rnd-k8s` practices.
+The TrendMaster-AI system has been successfully variabilized and is now ready for production deployment using your existing `platform-k8s` practices.
 
 ### 🔒 Security Status
 - **✅ All sensitive data variabilized** (246 replacements across 30 files)
@@ -25,14 +25,14 @@ cd TrendMaster-AI/adaptive_istio_rate_limit
 ./k8s/production-integration/docker-build.sh v1.0.0
 ```
 
-### Step 2: Integrate with ott-rnd-k8s
+### Step 2: Integrate with platform-k8s
 ```bash
 # Copy Helm chart to your be-charts directory
-cp -r k8s/helm-chart /path/to/ott-rnd-k8s/be-charts/trendmaster-ai
+cp -r k8s/helm-chart /path/to/platform-k8s/be-charts/trendmaster-ai
 
 # Add configuration to your existing values files
-# Use the examples in k8s/production-integration/values-orp2-example.yaml
-# and k8s/production-integration/values-prd1-example.yaml
+# Use the examples in k8s/production-integration/values-staging-example.yaml
+# and k8s/production-integration/values-production-example.yaml
 ```
 
 ### Step 3: Deploy via ArgoCD
@@ -44,13 +44,13 @@ kubectl apply -f k8s/argocd-application.yaml
 ## 🔧 Environment Configuration
 
 ### Staging Environment
-- **Prometheus URL**: Set via environment variables in your ott-rnd-k8s values
+- **Prometheus URL**: Set via environment variables in your platform-k8s values
 - **Schedule**: Every 6 hours (`0 */6 * * *`)
 - **Resources**: 512Mi memory, 250m CPU
 - **Dry Run**: false (will update ConfigMaps)
 
 ### Production Environment  
-- **Prometheus URL**: Set via environment variables in your ott-rnd-k8s values
+- **Prometheus URL**: Set via environment variables in your platform-k8s values
 - **Schedule**: Every 4 hours (`0 */4 * * *`)
 - **Resources**: 1Gi memory, 500m CPU
 - **Dry Run**: false (will update ConfigMaps)
@@ -93,7 +93,7 @@ The system will:
 
 1. **Review the configuration** in `k8s/production-integration/` directory
 2. **Update ArgoCD application** with your specific ECR registry and values
-3. **Add to your ott-rnd-k8s values files** using the provided examples
+3. **Add to your platform-k8s values files** using the provided examples
 4. **Deploy to staging first** for testing
 5. **Monitor logs and ConfigMap changes**
 6. **Deploy to production** once validated

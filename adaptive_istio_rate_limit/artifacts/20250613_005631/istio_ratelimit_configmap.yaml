@@ -11,7 +11,7 @@ data:
     # Adaptive Istio Rate Limiting System Configuration
     DEPLOYMENT:
       MODE: "production"
-      ENVIRONMENT: "orp2"
+      ENVIRONMENT: "staging"
 
     ENVIRONMENTS:
       production:
@@ -25,7 +25,7 @@ data:
         MONITORING_ENABLED: true
 
     COMMON:
-      ENV: "orp2"
+      ENV: "staging"
       DAYS_TO_INSPECT: 7
       LOG_LEVEL: "INFO"
       SHOW_ONLY_CONFIGURED: true

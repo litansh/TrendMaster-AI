@@ -1,21 +1,21 @@
-# Example configuration for values-prd1.yaml
-# Add these sections to your existing values-prd1.yaml file
+# Example configuration for values-production.yaml
+# Add these sections to your existing values-production.yaml file
 
 # TrendMaster-AI Adaptive Rate Limiting Configuration
 trendmaster_ai:
   enabled: "true"
-  prometheus_url: "https://trickster.prd1.ott.YOUR_COMPANY.com"
+  prometheus_url: "https://trickster.production.YOUR_COMPANY.com"
   dry_run: "false"  # Set to "true" for initial testing
   log_level: "INFO"
   schedule: "0 */4 * * *"  # Every 4 hours for production (more frequent)
   
-  # Production best practices - Conservative settings for PRD1
+  # Production best practices - Conservative settings for PRODUCTION
   calculation_mode: "fixed"  # Conservative for production (can be 'adaptive')
   phased_rollout: "true"
   shadow_mode_duration: "336"  # 2 weeks for critical production
-  initial_safety_buffer: "2.5"  # Extra conservative for prd1
+  initial_safety_buffer: "2.5"  # Extra conservative for production
   circuit_breaker_enabled: "true"
-  circuit_breaker_threshold: "0.02"  # 2% error rate for prd1
+  circuit_breaker_threshold: "0.02"  # 2% error rate for production
   emergency_bypass_enabled: "true"
   partner_notification_required: "true"
   vip_partner_protection: "true"  # Extra protection for critical partners

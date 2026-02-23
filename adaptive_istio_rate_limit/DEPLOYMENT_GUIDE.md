@@ -10,7 +10,7 @@ TrendMaster-AI has been fully integrated with YOUR_COMPANY's existing infrastruc
 - **Helm charts** with environment-specific configurations  
 - **ECR integration** for container images
 - **Istio rate limiting** integration with existing ConfigMaps
-- **Multi-environment support** (local, orp2, prd1)
+- **Multi-environment support** (local, staging, production)
 
 ## 🏗️ Architecture
 
@@ -41,28 +41,28 @@ cd TrendMaster-AI/adaptive_istio_rate_limit
 
 ```bash
 # Copy the Helm chart to your be-charts directory
-cp -r k8s/helm-chart /path/to/ott-rnd-k8s/be-charts/trendmaster-ai
+cp -r k8s/helm-chart /path/to/platform-k8s/be-charts/trendmaster-ai
 ```
 
 ### 3. Update Environment Values Files
 
 Add TrendMaster-AI configuration to your existing values files:
 
-**For ORP2 (`values-orp2.yaml`):**
+**For STAGING (`values-staging.yaml`):**
 ```yaml
 trendmaster_ai:
   enabled: "true"
-  prometheus_url: "https://trickster.orp2.ott.YOUR_COMPANY.com"
+  prometheus_url: "https://trickster.staging.YOUR_COMPANY.com"
   dry_run: "false"
   log_level: "INFO"
   schedule: "0 */6 * * *"
 ```
 
-**For PRD1 (`values-prd1.yaml`):**
+**For PRODUCTION (`values-production.yaml`):**
 ```yaml
 trendmaster_ai:
   enabled: "true"
-  prometheus_url: "https://trickster.prd1.ott.YOUR_COMPANY.com"
+  prometheus_url: "https://trickster.production.YOUR_COMPANY.com"
   dry_run: "false"
   log_level: "INFO"
   schedule: "0 */4 * * *"
@@ -89,8 +89,8 @@ TrendMaster-AI/adaptive_istio_rate_limit/
 │   │       └── configmap.yaml         # Application configuration
 │   ├── argocd-application.yaml         # ArgoCD application template
 │   └── production-integration/
-│       ├── values-orp2-example.yaml    # ORP2 environment config
-│       ├── values-prd1-example.yaml    # PRD1 environment config
+│       ├── values-staging-example.yaml    # STAGING environment config
+│       ├── values-production-example.yaml    # PRODUCTION environment config
 │       ├── docker-build.sh            # Container build script
 │       └── README.md                  # Integration guide
 ├── config/
@@ -135,7 +135,7 @@ TrendMaster-AI integrates seamlessly with existing Istio rate limiting:
 ./k8s/production-integration/docker-build.sh v1.0.0
 
 # 2. Create Helm chart in be-charts
-cp -r k8s/helm-chart /path/to/ott-rnd-k8s/be-charts/trendmaster-ai
+cp -r k8s/helm-chart /path/to/platform-k8s/be-charts/trendmaster-ai
 
 # 3. Add configuration to values file
 # (See examples in production-integration/)
@@ -214,16 +214,16 @@ argocd app get trendmaster-ai
 | Environment | Memory Request | Memory Limit | CPU Request | CPU Limit |
 |-------------|----------------|--------------|-------------|-----------|
 | Local       | 256Mi         | 512Mi        | 100m        | 250m      |
-| ORP2        | 512Mi         | 1Gi          | 250m        | 500m      |
-| PRD1        | 1Gi           | 2Gi          | 500m        | 1000m     |
+| STAGING        | 512Mi         | 1Gi          | 250m        | 500m      |
+| PRODUCTION        | 1Gi           | 2Gi          | 500m        | 1000m     |
 
 ### Schedule Frequency
 
 | Environment | Schedule      | Frequency    | Rationale                    |
 |-------------|---------------|--------------|------------------------------|
 | Local       | Manual        | On-demand    | Development testing          |
-| ORP2        | 0 */6 * * *   | Every 6h     | Staging validation           |
-| PRD1        | 0 */4 * * *   | Every 4h     | Production optimization      |
+| STAGING        | 0 */6 * * *   | Every 6h     | Staging validation           |
+| PRODUCTION        | 0 */4 * * *   | Every 4h     | Production optimization      |
 
 ## 🛡️ Security Considerations
 
@@ -263,13 +263,13 @@ argocd app get trendmaster-ai
 
 ```bash
 # Full deployment pipeline
-./scripts/deploy-pipeline.sh --env=orp2 --version=v1.0.0
+./scripts/deploy-pipeline.sh --env=staging --version=v1.0.0
 
 # Rollback script
-./scripts/rollback.sh --env=orp2 --version=v0.9.0
+./scripts/rollback.sh --env=staging --version=v0.9.0
 
 # Health check
-./scripts/health-check.sh --env=orp2
+./scripts/health-check.sh --env=staging
 ```
 
 ## 📞 Support and Maintenance

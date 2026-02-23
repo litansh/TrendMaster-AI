@@ -30,7 +30,7 @@ class TestEnvironmentIntegration:
         self.temp_config = {
             'DEPLOYMENT': {
                 'MODE': 'local',
-                'ENVIRONMENT': 'orp2'
+                'ENVIRONMENT': 'staging'
             },
             'ENVIRONMENTS': {
                 'local': {
@@ -38,18 +38,18 @@ class TestEnvironmentIntegration:
                     'KUBERNETES_CONTEXT': 'minikube',
                     'DRY_RUN': True,
                     'USE_MOCK_DATA': True,
-                    'ENV_NAME': 'orp2',
-                    'TRICKSTER_ENV': 'orp2'
+                    'ENV_NAME': 'staging',
+                    'TRICKSTER_ENV': 'staging'
                 },
                 'testing': {
-                    'PROMETHEUS_URL': 'https://trickster.orp2.ott.YOUR_COMPANY.com',
+                    'PROMETHEUS_URL': 'https://trickster.staging.YOUR_COMPANY.com',
                     'KUBERNETES_CONTEXT': 'eks-testing',
                     'DRY_RUN': True,
-                    'ENV_NAME': 'orp2',
-                    'TRICKSTER_ENV': 'orp2'
+                    'ENV_NAME': 'staging',
+                    'TRICKSTER_ENV': 'staging'
                 },
                 'production': {
-                    'PROMETHEUS_URL': 'https://trickster.production.ott.YOUR_COMPANY.com',
+                    'PROMETHEUS_URL': 'https://trickster.production.YOUR_COMPANY.com',
                     'KUBERNETES_CONTEXT': 'eks-production',
                     'DRY_RUN': False,
                     'ENV_NAME': 'production',
@@ -57,7 +57,7 @@ class TestEnvironmentIntegration:
                 }
             },
             'PARTNER_CONFIGS': {
-                'orp2': {
+                'staging': {
                     'partners': ['CUSTOMER_ID_1', 'CUSTOMER_ID_3', 'CUSTOMER_ID_4'],
                     'apis': [
                         '/api_v3/service/ENDPOINT_8playbackcontext',
@@ -127,9 +127,9 @@ class TestEnvironmentIntegration:
         
         try:
             # Test with environment variable
-            with patch.dict(os.environ, {'ENVIRONMENT': 'orp2'}):
+            with patch.dict(os.environ, {'ENVIRONMENT': 'staging'}):
                 config_manager = ConfigManager(config_file)
-                assert config_manager.get_current_environment() == 'orp2'
+                assert config_manager.get_current_environment() == 'staging'
                 assert config_manager.get_deployment_mode() == 'local'
             
             # Test with different environment variable
@@ -146,8 +146,8 @@ class TestEnvironmentIntegration:
         config_file = self.create_temp_config_file(self.temp_config)
         
         try:
-            # Test orp2 environment
-            with patch.dict(os.environ, {'ENVIRONMENT': 'orp2'}):
+            # Test staging environment
+            with patch.dict(os.environ, {'ENVIRONMENT': 'staging'}):
                 config_manager = ConfigManager(config_file)
                 partner_config = config_manager.get_partner_config()
                 
@@ -189,14 +189,14 @@ class TestEnvironmentIntegration:
         config_file = self.create_temp_config_file(self.temp_config)
         
         try:
-            with patch.dict(os.environ, {'ENVIRONMENT': 'orp2'}):
+            with patch.dict(os.environ, {'ENVIRONMENT': 'staging'}):
                 config_manager = ConfigManager(config_file)
                 config = config_manager.get_config()
                 
                 rate_calculator = EnhancedRateCalculator(config, None)
                 
                 # Test environment detection
-                assert rate_calculator.current_environment == 'orp2'
+                assert rate_calculator.current_environment == 'staging'
                 assert rate_calculator.deployment_mode == 'local'
                 
                 # Test partner configuration loading
@@ -223,17 +223,17 @@ class TestEnvironmentIntegration:
         config_file = self.create_temp_config_file(self.temp_config)
         
         try:
-            # Test orp2 environment
-            with patch.dict(os.environ, {'ENVIRONMENT': 'orp2'}):
+            # Test staging environment
+            with patch.dict(os.environ, {'ENVIRONMENT': 'staging'}):
                 config_manager = ConfigManager(config_file)
                 config = config_manager.get_config()
                 rate_calculator = EnhancedRateCalculator(config, None)
                 
-                # Validate orp2 partner
+                # Validate staging partner
                 validation = rate_calculator.validate_partner_path('CUSTOMER_ID_1', '/api_v3/service/ENDPOINT_5')
                 assert validation['valid'] == True
                 
-                # Production partner should not be valid in orp2
+                # Production partner should not be valid in staging
                 validation = rate_calculator.validate_partner_path('101', '/api_v3/service/ENDPOINT_5')
                 assert validation['valid'] == False
             
@@ -247,7 +247,7 @@ class TestEnvironmentIntegration:
                 validation = rate_calculator.validate_partner_path('101', '/api_v3/service/ENDPOINT_5')
                 assert validation['valid'] == True
                 
-                # orp2 partner should not be valid in production
+                # staging partner should not be valid in production
                 validation = rate_calculator.validate_partner_path('CUSTOMER_ID_1', '/api_v3/service/ENDPOINT_5')
                 assert validation['valid'] == False
         
@@ -295,13 +295,13 @@ class TestEnvironmentIntegration:
                 'metadata': {'name': 'test-config'}
             }
             
-            with patch.dict(os.environ, {'ENVIRONMENT': 'orp2'}):
+            with patch.dict(os.environ, {'ENVIRONMENT': 'staging'}):
                 # Initialize adaptive rate limiter
                 rate_limiter = AdaptiveRateLimiter(config_file)
                 
                 # Test environment information
                 env_info = rate_limiter.env_info
-                assert env_info.name == 'orp2'
+                assert env_info.name == 'staging'
                 assert env_info.deployment_mode == 'local'
                 assert 'CUSTOMER_ID_1' in env_info.partners
                 
@@ -314,7 +314,7 @@ class TestEnvironmentIntegration:
                 
                 # Verify results structure
                 assert 'environment' in results
-                assert results['environment'] == 'orp2'
+                assert results['environment'] == 'staging'
                 assert 'deployment_mode' in results
                 assert results['deployment_mode'] == 'local'
                 
@@ -327,7 +327,7 @@ class TestEnvironmentIntegration:
         
         try:
             with patch.dict(os.environ, {
-                'ENVIRONMENT': 'orp2',
+                'ENVIRONMENT': 'staging',
                 'LOG_LEVEL': 'ERROR',
                 'DRY_RUN': 'false',
                 'PROMETHEUS_URL': 'http://custom-prometheus:9090'
@@ -358,7 +358,7 @@ class TestEnvironmentIntegration:
             
             assert validation['valid'] == True
             assert len(validation['errors']) == 0
-            assert 'Environment: orp2' in validation['info']
+            assert 'Environment: staging' in validation['info']
             
         finally:
             os.unlink(config_file)
@@ -391,7 +391,7 @@ class TestEnvironmentIntegration:
         config_file = self.create_temp_config_file(self.temp_config)
         
         try:
-            with patch.dict(os.environ, {'ENVIRONMENT': 'orp2'}):
+            with patch.dict(os.environ, {'ENVIRONMENT': 'staging'}):
                 config_manager = ConfigManager(config_file)
                 env_info = config_manager.get_environment_info()
                 
@@ -406,9 +406,9 @@ class TestEnvironmentIntegration:
                 assert hasattr(env_info, 'apis')
                 
                 # Check values
-                assert env_info.name == 'orp2'
+                assert env_info.name == 'staging'
                 assert env_info.deployment_mode == 'local'
-                assert env_info.trickster_env == 'orp2'
+                assert env_info.trickster_env == 'staging'
                 assert env_info.dry_run == True
                 assert isinstance(env_info.partners, list)
                 assert isinstance(env_info.apis, list)

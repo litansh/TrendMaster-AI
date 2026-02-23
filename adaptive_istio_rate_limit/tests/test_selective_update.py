@@ -82,7 +82,7 @@ def main():
     selective_configmap = configmap_manager.generate_configmap(
         mock_rate_limits,
         current_configmap,
-        config.get('ENV', 'orp2'),
+        config.get('ENV', 'staging'),
         selective_update=True
     )
     
@@ -91,7 +91,7 @@ def main():
     full_configmap = configmap_manager.generate_configmap(
         mock_rate_limits,
         current_configmap,
-        config.get('ENV', 'orp2'),
+        config.get('ENV', 'staging'),
         selective_update=False
     )
     
