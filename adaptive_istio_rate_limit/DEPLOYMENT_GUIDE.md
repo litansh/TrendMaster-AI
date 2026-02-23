@@ -105,7 +105,7 @@ TrendMaster-AI/adaptive_istio_rate_limit/
 
 The system automatically detects the environment using:
 
-1. **Environment Variables**: `KALTURA_ENV`, `ENVIRONMENT`, `DEPLOYMENT_ENV`
+1. **Environment Variables**: `APP_ENV`, `ENVIRONMENT`, `DEPLOYMENT_ENV`
 2. **Kubernetes Service Detection**: Trickster service names
 3. **Helm Values**: Environment-specific configurations
 

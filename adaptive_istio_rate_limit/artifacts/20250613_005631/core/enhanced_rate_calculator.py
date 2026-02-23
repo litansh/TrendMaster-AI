@@ -151,7 +151,7 @@ class EnhancedRateCalculator:
             'ENVIRONMENT',
             'ENV',
             'DEPLOYMENT_ENV',
-            'KALTURA_ENV',
+            'APP_ENV',
             'TRICKSTER_ENV',
             'APP_ENV',
             'NODE_ENV'

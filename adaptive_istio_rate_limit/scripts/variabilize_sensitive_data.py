@@ -41,11 +41,11 @@ REPLACEMENTS = {
     r'/api_v3/service/new/action/create': '/api_v3/service/ENDPOINT_9',
     
     # Company references
-    r'kaltura\.com': 'YOUR_COMPANY.com',
-    r'Kaltura': 'YOUR_COMPANY',
-    r'kaltura': 'your_company',
-    r'trickster\.orp2\.ott\.kaltura\.com': 'trickster.staging.YOUR_DOMAIN.com',
-    r'trickster\.prd1\.ott\.kaltura\.com': 'trickster.production.YOUR_DOMAIN.com',
+    r'your_company\.com': 'YOUR_COMPANY.com',
+    r'YourCompany': 'YOUR_COMPANY',
+    r'your_company': 'your_company',
+    r'trickster\.orp2\.ott\.your_company\.com': 'trickster.staging.YOUR_DOMAIN.com',
+    r'trickster\.prd1\.ott\.your_company\.com': 'trickster.production.YOUR_DOMAIN.com',
     
     # ECR Registry
     r'066597193667\.dkr\.ecr\.us-east-1\.amazonaws\.com': 'YOUR_ECR_REGISTRY.dkr.ecr.YOUR_REGION.amazonaws.com',

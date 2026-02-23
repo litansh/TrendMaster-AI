@@ -1,6 +1,6 @@
 # Required
-PROMETHEUS_URL: 'https://trickster.orp2.ott.kaltura.com'
-GRAFANA_DASHBOARD_URL: 'https://grafana.ott.kaltura.com/d'
+PROMETHEUS_URL: 'https://prometheus.staging.example.com'
+GRAFANA_DASHBOARD_URL: 'https://grafana.example.com/d'
 
 # Optional
 DAYS_TO_INSPECT: 7

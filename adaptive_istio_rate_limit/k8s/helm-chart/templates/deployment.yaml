@@ -38,7 +38,7 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command: ["python", "scripts/main.py"]
         env:
-        - name: KALTURA_ENV
+        - name: APP_ENV
           value: {{ .Values.environment.name | quote }}
         - name: PROMETHEUS_URL
           value: {{ .Values.environment.prometheus_url | quote }}

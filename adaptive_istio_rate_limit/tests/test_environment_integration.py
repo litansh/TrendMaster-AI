@@ -133,7 +133,7 @@ class TestEnvironmentIntegration:
                 assert config_manager.get_deployment_mode() == 'local'
             
             # Test with different environment variable
-            with patch.dict(os.environ, {'KALTURA_ENV': 'production'}):
+            with patch.dict(os.environ, {'APP_ENV': 'production'}):
                 config_manager = ConfigManager(config_file)
                 assert config_manager.get_current_environment() == 'production'
                 assert config_manager.get_deployment_mode() == 'production'

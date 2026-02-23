@@ -108,7 +108,7 @@ pip install -r requirements.txt
 ### 3. Configure Environment
 ```bash
 # Set environment (local, testing, orp2, production)
-export KALTURA_ENV=local
+export APP_ENV=local
 
 # For production environments, ensure Kubernetes access
 export KUBECONFIG=/path/to/kubeconfig
@@ -153,7 +153,7 @@ python scripts/main.py --verbose
 ### Local Development
 ```bash
 # Set local environment
-export KALTURA_ENV=local
+export APP_ENV=local
 
 # Run the system (uses example partners from config)
 python scripts/main.py
@@ -166,7 +166,7 @@ python scripts/main.py
 ### Testing Environment
 ```bash
 # Set testing environment
-export KALTURA_ENV=testing
+export APP_ENV=testing
 
 # Ensure Kubernetes access
 export KUBECONFIG=/path/to/testing-kubeconfig
@@ -262,7 +262,7 @@ spec:
       - name: trendmaster-ai
         image: your-registry/trendmaster-ai:latest
         env:
-        - name: KALTURA_ENV
+        - name: APP_ENV
           value: "production"
         - name: PROMETHEUS_URL
           value: "https://prometheus.production.ott.YOUR_COMPANY.com"
@@ -347,7 +347,7 @@ spec:
             image: your-registry/trendmaster-ai:latest
             command: ["python", "scripts/main.py"]
             env:
-            - name: KALTURA_ENV
+            - name: APP_ENV
               value: "production"
           restartPolicy: OnFailure
 ```
@@ -389,7 +389,7 @@ data:
 ## 🔧 Configuration
 
 ### Environment Variables
-- `KALTURA_ENV`: Environment name (local, testing, orp2, production)
+- `APP_ENV`: Environment name (local, testing, orp2, production)
 - `PROMETHEUS_URL`: Prometheus endpoint URL
 - `KUBECONFIG`: Kubernetes configuration file path
 
@@ -495,13 +495,13 @@ cat output/$(ls -t output/*configmap*.yaml | head -1)
 
 ### 1. Local Development
 ```bash
-export KALTURA_ENV=local
+export APP_ENV=local
 python scripts/main.py
 ```
 
 ### 2. Testing Environment
 ```bash
-export KALTURA_ENV=testing
+export APP_ENV=testing
 export KUBECONFIG=/path/to/testing-kubeconfig
 python scripts/main.py
 ```
