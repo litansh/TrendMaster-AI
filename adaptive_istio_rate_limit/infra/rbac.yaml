@@ -40,3 +40,6 @@ subjects:
 - kind: ServiceAccount
   name: adaptive-rate-limiter
   namespace: istio-system
+label: 
+- owner: devops
+  service_name: adaptive-rate-limiter
